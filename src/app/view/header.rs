@@ -10,15 +10,8 @@ impl Taskscape {
         &self,
         eyebrow: &'static str,
         title: &'static str,
-        subtitle_prefix: &'static str,
     ) -> AppElement<'_> {
         let palette = tokens(self.theme_mode);
-        let summary = format!(
-            "{} {} of {} todos",
-            subtitle_prefix,
-            self.visible_count(),
-            self.tasks.len()
-        );
 
         let controls = row![
             icon_button(
@@ -42,7 +35,6 @@ impl Taskscape {
                 column![
                     text(eyebrow).size(11).style(palette.text_muted),
                     text(title).size(52).style(palette.text_primary),
-                    text(summary).size(16).style(palette.text_secondary)
                 ]
                 .spacing(6),
                 Space::with_width(Length::Fill),

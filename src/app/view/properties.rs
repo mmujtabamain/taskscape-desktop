@@ -13,7 +13,6 @@ impl Taskscape {
             self.header(
                 "WORKSPACE PROPERTIES",
                 "Collections",
-                "Manage appearance, persistence and workflow controls for TaskScape.",
             ),
             container(
                 column![

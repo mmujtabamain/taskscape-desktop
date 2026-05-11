@@ -11,7 +11,7 @@ impl Taskscape {
         let visible_tasks = self.filtered_tasks();
 
         let mut content = column![
-            self.header("MULTI LIST PLANNER", "TaskScape", "Active list: Todos · Showing"),
+            self.header("MULTI LIST PLANNER", "TaskScape"),
             self.composer_row(),
         ]
         .spacing(16)
@@ -87,12 +87,9 @@ impl Taskscape {
 
     fn metrics_row(&self) -> AppElement<'_> {
         row![
-            metric_card(self.theme_mode, self.visible_count().to_string(), "Visible"),
-            metric_card(self.theme_mode, self.active_todos_count().to_string(), "In Todos"),
             metric_card(self.theme_mode, self.completed_count().to_string(), "Completed"),
             metric_card(self.theme_mode, self.open_count().to_string(), "Open"),
             metric_card(self.theme_mode, self.archived_count().to_string(), "Archived"),
-            metric_card(self.theme_mode, String::from("14.2 KB"), "Storage used"),
         ]
         .spacing(8)
         .into()
