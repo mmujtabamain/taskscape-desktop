@@ -1,25 +1,30 @@
 use crate::app::{AppElement, Message};
 use crate::thememanager::{ButtonKind, ThemeMode, button_style, tokens};
-use iced::alignment;
-use iced::widget::{button, text};
+use crate::widgets::{body, lucide_icon};
+use iced::Alignment;
+use iced::widget::{button, row};
+use lucide_icons::Icon;
 
 pub fn icon_button(
     theme_mode: ThemeMode,
-    symbol: &'static str,
+    symbol: Icon,
     count: Option<u32>,
     message: Option<Message>,
 ) -> AppElement<'static> {
     let palette = tokens(theme_mode);
-    let label = count
-        .map(|value| format!("{} {}", symbol, value))
-        .unwrap_or_else(|| symbol.to_owned());
+    let content = if let Some(value) = count {
+        row![
+            lucide_icon(symbol, 16.0, palette.text_primary),
+            body(value.to_string(), 14.0, palette.text_primary),
+        ]
+        .spacing(8)
+        .align_y(Alignment::Center)
+    } else {
+        row![lucide_icon(symbol, 16.0, palette.text_primary)]
+            .align_y(Alignment::Center)
+    };
 
-    button(
-        text(label)
-            .size(16)
-            .style(palette.text_primary)
-            .horizontal_alignment(alignment::Horizontal::Center),
-    )
+    button(content)
     .padding([10, 12])
     .style(button_style(theme_mode, ButtonKind::Icon))
     .on_press_maybe(message)

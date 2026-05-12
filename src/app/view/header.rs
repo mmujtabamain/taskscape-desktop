@@ -1,47 +1,77 @@
 use crate::app::{AppElement, Message, Taskscape};
 use crate::thememanager::{panel_alt_container, tokens};
-use crate::widgets::icon_button;
+use crate::widgets::{body, heading, icon_button};
 use iced::Alignment;
 use iced::Length;
-use iced::widget::{Space, column, container, row, text};
+use iced::widget::{Space, column, container, row};
+use lucide_icons::Icon;
 
 impl Taskscape {
-    pub(crate) fn header(
-        &self,
-        eyebrow: &'static str,
-        title: &'static str,
-    ) -> AppElement<'_> {
+    pub(crate) fn header(&self) -> AppElement<'_> {
         let palette = tokens(self.theme_mode);
 
         let controls = row![
             icon_button(
                 self.theme_mode,
+                Icon::FilePlus,
+                None,
+                Some(Message::FileNew),
+            ),
+            icon_button(
+                self.theme_mode,
+                Icon::Save,
+                None,
+                Some(Message::FileSave),
+            ),
+            icon_button(
+                self.theme_mode,
+                Icon::FolderOpen,
+                None,
+                Some(Message::FileLoad),
+            ),
+            icon_button(
+                self.theme_mode,
                 if self.theme_mode == crate::thememanager::ThemeMode::Dark {
-                    "☼"
+                    Icon::Sun
                 } else {
-                    "☾"
+                    Icon::Moon
                 },
                 None,
                 Some(Message::ToggleTheme),
             ),
-            icon_button(self.theme_mode, "↺", Some(0), None),
-            icon_button(self.theme_mode, "↻", Some(0), None),
+            icon_button(
+                self.theme_mode,
+                Icon::Undo2,
+                Some(self.undo_stack.len() as u32),
+                Some(Message::EditUndo),
+            ),
+            icon_button(
+                self.theme_mode,
+                Icon::Redo2,
+                Some(self.redo_stack.len() as u32),
+                Some(Message::EditRedo),
+            ),
         ]
         .spacing(10)
-        .align_items(Alignment::Center);
+        .align_y(Alignment::Center);
 
         column![
             row![
                 column![
-                    text(eyebrow).size(11).style(palette.text_muted),
-                    text(title).size(52).style(palette.text_primary),
+                    crate::widgets::caption("TODO", 11.0, palette.text_muted),
+                    heading("Taskscape Desktop", 40.0, palette.text_primary),
+                    body(
+                        format!("{} tasks in this list.", self.total_count()),
+                        15.0,
+                        palette.text_secondary,
+                    ),
                 ]
                 .spacing(6),
-                Space::with_width(Length::Fill),
+                Space::new().width(Length::Fill),
                 controls,
             ]
-            .align_items(Alignment::Start),
-            container(Space::with_height(Length::Fixed(1.0)))
+            .align_y(Alignment::Start),
+            container(Space::new().height(Length::Fixed(1.0)))
                 .width(Length::Fill)
                 .style(panel_alt_container(self.theme_mode)),
         ]

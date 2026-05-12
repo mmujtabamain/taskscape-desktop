@@ -1,61 +1,37 @@
 use crate::thememanager::helpers::{border, with_alpha};
 use crate::thememanager::{ThemeMode, tokens};
-use iced::theme;
 use iced::widget::text_input;
-use iced::{Color, Theme};
+use iced::Theme;
 
-struct AppInputStyle {
+pub fn text_input_style(
     mode: ThemeMode,
-}
-
-impl text_input::StyleSheet for AppInputStyle {
-    type Style = Theme;
-
-    fn active(&self, _style: &Self::Style) -> text_input::Appearance {
-        let palette = tokens(self.mode);
-
-        text_input::Appearance {
+) -> impl Fn(&Theme, text_input::Status) -> text_input::Style + Clone {
+    move |_theme: &Theme, status| {
+        let palette = tokens(mode);
+        let mut style = text_input::Style {
             background: palette.panel_raised.into(),
             border: border(12.0, 1.0, palette.border),
-            icon_color: palette.text_secondary,
+            icon: palette.text_secondary,
+            placeholder: palette.text_muted,
+            value: palette.text_primary,
+            selection: with_alpha(palette.accent, 0.28),
+        };
+
+        match status {
+            text_input::Status::Active => style,
+            text_input::Status::Hovered => {
+                style.border.color = palette.border_strong;
+                style
+            }
+            text_input::Status::Focused { .. } => {
+                style.border.color = palette.accent;
+                style
+            }
+            text_input::Status::Disabled => {
+                style.background = with_alpha(palette.panel_raised, 0.5).into();
+                style.value = palette.text_muted;
+                style
+            }
         }
     }
-
-    fn hovered(&self, style: &Self::Style) -> text_input::Appearance {
-        let mut appearance = self.active(style);
-        appearance.border.color = tokens(self.mode).border_strong;
-        appearance
-    }
-
-    fn focused(&self, style: &Self::Style) -> text_input::Appearance {
-        let mut appearance = self.active(style);
-        appearance.border.color = tokens(self.mode).accent;
-        appearance
-    }
-
-    fn placeholder_color(&self, _style: &Self::Style) -> Color {
-        tokens(self.mode).text_muted
-    }
-
-    fn value_color(&self, _style: &Self::Style) -> Color {
-        tokens(self.mode).text_primary
-    }
-
-    fn disabled_color(&self, _style: &Self::Style) -> Color {
-        tokens(self.mode).text_muted
-    }
-
-    fn selection_color(&self, _style: &Self::Style) -> Color {
-        with_alpha(tokens(self.mode).accent, 0.28)
-    }
-
-    fn disabled(&self, style: &Self::Style) -> text_input::Appearance {
-        let mut appearance = self.active(style);
-        appearance.background = with_alpha(tokens(self.mode).panel_raised, 0.5).into();
-        appearance
-    }
-}
-
-pub fn text_input_style(mode: ThemeMode) -> theme::TextInput {
-    theme::TextInput::Custom(Box::new(AppInputStyle { mode }))
 }

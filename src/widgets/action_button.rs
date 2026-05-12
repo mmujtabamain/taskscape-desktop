@@ -1,25 +1,33 @@
 use crate::app::{AppElement, Message};
 use crate::thememanager::{ButtonKind, ThemeMode, button_style, tokens};
+use crate::widgets::{body, lucide_icon};
 use iced::Alignment;
-use iced::widget::{button, row, text};
+use iced::widget::{button, row};
+use lucide_icons::Icon;
 
 pub fn labeled_button<'a>(
     theme_mode: ThemeMode,
-    icon: &'a str,
+    icon: Option<Icon>,
     label: &'a str,
     kind: ButtonKind,
     message: Option<Message>,
 ) -> AppElement<'a> {
     let palette = tokens(theme_mode);
 
-    button(
+    let content = if let Some(icon) = icon {
         row![
-            text(icon).size(15).style(palette.text_primary),
-            text(label).size(16).style(palette.text_primary),
+            lucide_icon(icon, 15.0, palette.text_primary),
+            body(label, 16.0, palette.text_primary),
         ]
         .spacing(8)
-        .align_items(Alignment::Center),
-    )
+        .align_y(Alignment::Center)
+    } else {
+        row![body(label, 16.0, palette.text_primary)]
+            .spacing(8)
+            .align_y(Alignment::Center)
+    };
+
+    button(content)
     .padding([10, 14])
     .style(button_style(theme_mode, kind))
     .on_press_maybe(message)

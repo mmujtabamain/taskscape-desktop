@@ -1,42 +1,34 @@
 use crate::app::{AppElement, Message, Taskscape};
 use crate::models::Priority;
-use crate::thememanager::{ButtonKind, shell_container};
+use crate::thememanager::ButtonKind;
 use crate::widgets::{app_input, labeled_button, metric_card, styled_dropdown};
 use iced::Alignment;
 use iced::Length;
-use iced::widget::{column, container, row};
+use iced::widget::{column, row};
+use lucide_icons::Icon;
 
 impl Taskscape {
     pub(crate) fn tasks_view(&self) -> AppElement<'_> {
-        let visible_tasks = self.filtered_tasks();
-
         let mut content = column![
-            self.header("MULTI LIST PLANNER", "TaskScape"),
+            self.header(),
             self.composer_row(),
         ]
-        .spacing(16)
-        .padding([22, 24, 30, 24]);
-
-        if self.show_filters {
-            content = content.push(self.filters_panel());
-        }
+        .height(Length::Fill)
+        .spacing(16);
 
         content = content
             .push(self.metrics_row())
             .push(self.actions_row())
-            .push(self.workspace_panel(&visible_tasks));
+            .push(self.task_list_panel());
 
-        container(content)
-            .width(Length::Fill)
-            .style(shell_container(self.theme_mode))
-            .into()
+        content.into()
     }
 
     fn composer_row(&self) -> AppElement<'_> {
         row![
             app_input(
                 self.theme_mode,
-                "Add a focused task, then press Enter",
+                "Enter a task title and press Enter",
                 &self.title_input,
                 Message::TitleChanged,
                 Length::Fill,
@@ -57,39 +49,24 @@ impl Taskscape {
                 Length::Fixed(150.0),
                 None,
             ),
-            app_input(
-                self.theme_mode,
-                "tags: launch, inbox",
-                &self.tags_input,
-                Message::TagsChanged,
-                Length::Fixed(150.0),
-                None,
-            ),
             labeled_button(
                 self.theme_mode,
-                "☷",
-                "Filters",
-                ButtonKind::Secondary,
-                Some(Message::ToggleFilters),
-            ),
-            labeled_button(
-                self.theme_mode,
-                "✦",
+                Some(Icon::CirclePlus),
                 "Add",
                 ButtonKind::Primary,
                 Some(Message::AddTask),
             ),
         ]
         .spacing(10)
-        .align_items(Alignment::Center)
+        .align_y(Alignment::Center)
         .into()
     }
 
     fn metrics_row(&self) -> AppElement<'_> {
         row![
-            metric_card(self.theme_mode, self.completed_count().to_string(), "Completed"),
+            metric_card(self.theme_mode, self.total_count().to_string(), "Total"),
             metric_card(self.theme_mode, self.open_count().to_string(), "Open"),
-            metric_card(self.theme_mode, self.archived_count().to_string(), "Archived"),
+            metric_card(self.theme_mode, self.completed_count().to_string(), "Completed"),
         ]
         .spacing(8)
         .into()
@@ -99,21 +76,14 @@ impl Taskscape {
         row![
             labeled_button(
                 self.theme_mode,
-                "✓",
+                Some(Icon::CheckCheck),
                 "Clear completed",
                 ButtonKind::Ghost,
                 Some(Message::ClearCompleted),
             ),
             labeled_button(
                 self.theme_mode,
-                "□",
-                "Archive completed",
-                ButtonKind::Ghost,
-                Some(Message::ArchiveCompleted),
-            ),
-            labeled_button(
-                self.theme_mode,
-                "⌫",
+                Some(Icon::CircleX),
                 "Clear all",
                 ButtonKind::Ghost,
                 Some(Message::ClearAll),

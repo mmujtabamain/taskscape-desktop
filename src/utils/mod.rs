@@ -1,2 +1,2 @@
-pub mod date;
-pub mod tags;
+pub mod fonts;
+pub mod persistence;

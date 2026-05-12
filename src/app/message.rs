@@ -1,32 +1,28 @@
-use crate::models::{
-    CompletionFilter, NavSection, Priority, PriorityFilter, QuickDate, SortMode,
-    StatusFilter,
-};
-use crate::thememanager::ThemeMode;
+use crate::app::native_menu::NativeMenuCommand;
+use crate::models::Priority;
+use iced::{keyboard, window};
+use std::path::PathBuf;
 
 #[derive(Debug, Clone)]
 pub enum Message {
-    SetNav(NavSection),
-    SetThemeMode(ThemeMode),
+    FontLoaded,
     ToggleTheme,
-    ToggleFilters,
     TitleChanged(String),
     DueDateChanged(String),
-    TagsChanged(String),
-    FilterSearchChanged(String),
-    FilterTagChanged(String),
-    FilterFromChanged(String),
-    FilterToChanged(String),
     ComposerPriorityChanged(Priority),
-    CompletionFilterChanged(CompletionFilter),
-    PriorityFilterChanged(PriorityFilter),
-    StatusFilterChanged(StatusFilter),
-    SortModeChanged(SortMode),
-    QuickDateChanged(QuickDate),
+    ToggleTaskCompleted(usize, bool),
     AddTask,
     ClearCompleted,
-    ArchiveCompleted,
     ClearAll,
-    ClearFilters,
-    SaveFilters,
+    FileNew,
+    FileSave,
+    FileLoad,
+    FileSaveResult(Option<PathBuf>),
+    FileLoadResult(Option<PathBuf>),
+    EditUndo,
+    EditRedo,
+    WindowOpened(window::Id),
+    NativeMenuEvent(NativeMenuCommand),
+    NativeMenuInstalled(Result<(), String>),
+    KeyboardEvent(keyboard::Event),
 }

@@ -1,6 +1,7 @@
 use std::fmt;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub enum Priority {
     Low,
     #[default]
@@ -27,15 +28,6 @@ impl Priority {
             Self::Medium => "Medium",
             Self::High => "High",
             Self::Critical => "Critical",
-        }
-    }
-
-    pub fn rank(self) -> u8 {
-        match self {
-            Self::Low => 0,
-            Self::Medium => 1,
-            Self::High => 2,
-            Self::Critical => 3,
         }
     }
 }

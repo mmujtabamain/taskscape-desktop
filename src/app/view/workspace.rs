@@ -1,78 +1,87 @@
-use crate::app::{AppElement, Taskscape};
+use crate::app::{AppElement, Message, Taskscape};
 use crate::models::Task;
 use crate::thememanager::{empty_state_container, panel_alt_container, tokens};
-use crate::widgets::small_chip;
+use crate::widgets::{body, heading, small_chip};
 use iced::Alignment;
 use iced::Length;
-use iced::widget::{Space, column, container, row, text};
+use iced::widget::{Space, checkbox, column, container, row, scrollable};
 
 impl Taskscape {
-    pub(crate) fn workspace_panel<'a>(&'a self, tasks: &[&'a Task]) -> AppElement<'a> {
+    pub(crate) fn task_list_panel(&self) -> AppElement<'_> {
         let palette = tokens(self.theme_mode);
+        let tasks = self.visible_tasks();
 
         if tasks.is_empty() {
             container(
                 column![
-                    text("Your runway is clear").size(30).style(palette.text_primary),
-                    text("Use the composer, import panel, or saved filters to build your workspace.")
-                        .size(17)
-                        .style(palette.text_secondary),
+                    heading("No tasks yet", 30.0, palette.text_primary),
+                    body(
+                        "Create a task or load a CSV todo file.",
+                        17.0,
+                        palette.text_secondary,
+                    ),
                 ]
                 .spacing(10)
-                .align_items(Alignment::Center),
+                .align_x(Alignment::Center),
             )
             .width(Length::Fill)
             .height(Length::Fixed(280.0))
-            .center_x()
-            .center_y()
+            .center_x(Length::Fill)
+            .center_y(Length::Fill)
             .style(empty_state_container(self.theme_mode))
             .into()
         } else {
-            let list = tasks.iter().fold(column![].spacing(12), |column, task| {
-                column.push(self.task_card(task))
+            let list = tasks.iter().fold(column![].spacing(12), |column, (index, task)| {
+                column.push(self.task_card(*index, task))
             });
+
+            let list = scrollable(list).height(Length::Fill);
 
             container(list)
                 .width(Length::Fill)
+                .height(Length::Fill)
                 .style(empty_state_container(self.theme_mode))
                 .padding(14)
                 .into()
         }
     }
 
-    fn task_card<'a>(&'a self, task: &'a Task) -> AppElement<'a> {
+    fn task_card<'a>(&'a self, index: usize, task: &'a Task) -> AppElement<'a> {
         let palette = tokens(self.theme_mode);
-
-        let chips = task.tags.iter().fold(row![].spacing(6), |row, tag| {
-            row.push(small_chip(self.theme_mode, tag, false))
-        });
 
         let meta = row![
             small_chip(self.theme_mode, task.priority.short_label(), true),
-            small_chip(self.theme_mode, task.status.label(), false),
             match task.due_date.as_deref() {
                 Some(date) => small_chip(self.theme_mode, date, false),
-                None => small_chip(self.theme_mode, "No date", false),
+                None => small_chip(self.theme_mode, "No due date", false),
             },
         ]
         .spacing(6)
-        .align_items(Alignment::Center);
+        .align_y(Alignment::Center);
 
         container(
             column![
                 row![
+                    checkbox(task.completed)
+                        .on_toggle(move |completed| Message::ToggleTaskCompleted(index, completed))
+                        .size(18),
                     column![
-                        text(&task.title).size(20).style(palette.text_primary),
-                        text("Captured in the current list workspace")
-                            .size(14)
-                            .style(palette.text_secondary)
+                        heading(&task.title, 20.0, palette.text_primary),
+                        body(
+                            if task.completed {
+                                "Completed"
+                            } else {
+                                "Open"
+                            },
+                            14.0,
+                            palette.text_secondary,
+                        )
                     ]
                     .spacing(4),
-                    Space::with_width(Length::Fill),
+                    Space::new().width(Length::Fill),
                     meta,
                 ]
-                .align_items(Alignment::Center),
-                chips,
+                .align_y(Alignment::Center),
             ]
             .spacing(12),
         )
