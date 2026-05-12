@@ -1,8 +1,8 @@
 use iced::Subscription;
 use iced::futures::channel::mpsc;
-use muda::{Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu};
+use iced::futures::sink::SinkExt;
+use muda::{Menu, MenuEvent, MenuItem, Submenu};
 use std::cell::{Cell, RefCell};
-use std::sync::Once;
 
 #[cfg(target_os = "windows")]
 use iced::window::raw_window_handle::{HasWindowHandle, RawWindowHandle};
@@ -18,9 +18,6 @@ thread_local! {
     static MENU_HANDLE: RefCell<Option<Menu>> = const { RefCell::new(None) };
     static MENU_INSTALLED: Cell<bool> = const { Cell::new(false) };
 }
-
-// Ensures the event stream thread is only spawned once across subscription re-runs.
-static STREAM_STARTED: Once = Once::new();
 
 #[derive(Debug, Clone, Copy)]
 pub enum NativeMenuCommand {
@@ -55,18 +52,15 @@ fn install_menu(window: &dyn HasWindowHandle) -> Result<(), String> {
 
     let menu = build_menu().map_err(|e| e.to_string())?;
 
-    #[cfg(target_os = "windows")]
-    {
-        let handle = window
-            .window_handle()
-            .map_err(|e| format!("window handle error: {e}"))?;
-        match handle.as_raw() {
-            RawWindowHandle::Win32(h) => unsafe {
-                menu.init_for_hwnd(h.hwnd.get())
-                    .map_err(|e| format!("init_for_hwnd failed: {e}"))?;
-            },
-            other => return Err(format!("unsupported handle type: {other:?}")),
-        }
+    let handle = window
+        .window_handle()
+        .map_err(|e| format!("window handle error: {e}"))?;
+    match handle.as_raw() {
+        RawWindowHandle::Win32(h) => unsafe {
+            menu.init_for_hwnd(h.hwnd.get())
+                .map_err(|e| format!("init_for_hwnd failed: {e}"))?;
+        },
+        other => return Err(format!("unsupported handle type: {other:?}")),
     }
 
     #[cfg(any(
@@ -103,51 +97,46 @@ pub fn install_for_window(
 pub fn install_for_window(
     _window: &dyn iced::window::raw_window_handle::HasWindowHandle,
 ) -> Result<(), String> {
-    // No-op on unsupported platforms.
-    Ok(())
+    Err(String::from(
+        "Native menu is not supported on this platform in iced/winit yet. Keyboard shortcuts remain available.",
+    ))
 }
 
 /// Returns a subscription that delivers native menu events as [`NativeMenuCommand`]s.
-/// On macOS the menu is installed immediately (no window handle needed).
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 pub fn subscription() -> Subscription<NativeMenuCommand> {
-    // macOS: install menu as soon as subscriptions are evaluated.
-    #[cfg(target_os = "macos")]
-    {
-        if !is_installed() {
-            if let Err(error) = install_menu() {
-                eprintln!("Failed to install native macOS menu: {error}");
-            }
-        }
-    }
-
     Subscription::run(menu_event_stream)
 }
 
-/// Builds a stream of menu commands without blocking the async executor.
-/// Spawns a single OS thread that performs the blocking recv and forwards
-/// events via a non-blocking try_send.
-fn menu_event_stream() -> impl iced::futures::Stream<Item = NativeMenuCommand> {
-    let (mut tx, rx) = mpsc::channel::<NativeMenuCommand>(64);
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
+pub fn subscription() -> Subscription<NativeMenuCommand> {
+    Subscription::none()
+}
 
-    STREAM_STARTED.call_once(|| {
-        std::thread::Builder::new()
-            .name("taskscape-menu-events".into())
-            .spawn(move || {
-                let receiver = MenuEvent::receiver();
-                loop {
-                    match receiver.recv() {
-                        Ok(event) => {
-                            if let Some(cmd) = map_event_to_command(&event) {
-                                // try_send is non-blocking; drops the event if buffer is full.
-                                let _ = tx.try_send(cmd);
-                            }
-                        }
-                        Err(_) => break,
+/// Builds a stream of menu commands without blocking the async executor.
+/// A dedicated forwarding thread is tied to the stream receiver lifetime.
+fn menu_event_stream() -> impl iced::futures::Stream<Item = NativeMenuCommand> {
+    let (tx, rx) = mpsc::channel::<NativeMenuCommand>(64);
+
+    if let Err(error) = std::thread::Builder::new()
+        .name("taskscape-menu-events".into())
+        .spawn(move || {
+            let mut tx = tx;
+            let receiver = MenuEvent::receiver();
+
+            while let Ok(event) = receiver.recv() {
+                if let Some(cmd) = map_event_to_command(&event) {
+                    // Block this forwarding thread when needed so we do not drop events.
+                    if iced::futures::executor::block_on(tx.send(cmd)).is_err() {
+                        // The subscription stream was dropped.
+                        break;
                     }
                 }
-            })
-            .expect("failed to spawn menu event thread");
-    });
+            }
+        })
+    {
+        eprintln!("Failed to spawn native menu event thread: {error}");
+    }
 
     rx
 }
@@ -169,19 +158,47 @@ fn is_installed() -> bool {
 }
 
 fn build_menu() -> muda::Result<Menu> {
+    let menu: Menu = Menu::new();
+
+    #[cfg(target_os = "macos")]
+    {
+        use muda::PredefinedMenuItem;
+
+        let app_menu = Submenu::with_items(
+            "",
+            true,
+            &[
+                &PredefinedMenuItem::about(None, None),
+                &PredefinedMenuItem::separator(),
+                &PredefinedMenuItem::services(None),
+                &PredefinedMenuItem::separator(),
+                &PredefinedMenuItem::hide(None),
+                &PredefinedMenuItem::hide_others(None),
+                &PredefinedMenuItem::show_all(None),
+                &PredefinedMenuItem::separator(),
+                &PredefinedMenuItem::quit(None),
+            ],
+        )?;
+
+        menu.append(&app_menu)?;
+    }
+
     let file_new = MenuItem::with_id(ID_FILE_NEW, "New List", true, None);
     let file_save = MenuItem::with_id(ID_FILE_SAVE, "Save CSV…", true, None);
     let file_load = MenuItem::with_id(ID_FILE_LOAD, "Load CSV…", true, None);
-    let sep = PredefinedMenuItem::separator();
 
     let edit_undo = MenuItem::with_id(ID_EDIT_UNDO, "Undo", true, None);
     let edit_redo = MenuItem::with_id(ID_EDIT_REDO, "Redo", true, None);
 
     let view_theme = MenuItem::with_id(ID_VIEW_TOGGLE_THEME, "Toggle Theme", true, None);
 
-    let file_menu = Submenu::with_items("File", true, &[&file_new, &file_save, &file_load, &sep])?;
+    let file_menu = Submenu::with_items("File", true, &[&file_new, &file_save, &file_load])?;
     let edit_menu = Submenu::with_items("Edit", true, &[&edit_undo, &edit_redo])?;
     let view_menu = Submenu::with_items("View", true, &[&view_theme])?;
 
-    Menu::with_items(&[&file_menu, &edit_menu, &view_menu])
+    menu.append(&file_menu)?;
+    menu.append(&edit_menu)?;
+    menu.append(&view_menu)?;
+
+    Ok(menu)
 }
