@@ -1,5 +1,5 @@
-use crate::app::{AppTask, Message, Taskscape};
 use crate::app::snapshot::AppSnapshot;
+use crate::app::{AppTask, Message, Taskscape};
 use crate::models::Task as TaskItem;
 use crate::utils::persistence::{TODO_FILE, load_todos_from_path, save_todos_to_path};
 use iced::Task;
@@ -11,7 +11,6 @@ impl Taskscape {
             theme_mode: self.theme_mode,
             title_input: self.title_input.clone(),
             due_date_input: self.due_date_input.clone(),
-            composer_priority: self.composer_priority,
             tasks: self.tasks.clone(),
         }
     }
@@ -20,7 +19,6 @@ impl Taskscape {
         self.theme_mode = snapshot.theme_mode;
         self.title_input = snapshot.title_input;
         self.due_date_input = snapshot.due_date_input;
-        self.composer_priority = snapshot.composer_priority;
         self.tasks = snapshot.tasks;
     }
 
@@ -38,13 +36,7 @@ impl Taskscape {
 
         self.push_history();
 
-        self.tasks.push(TaskItem {
-            title,
-            priority: self.composer_priority,
-            due_date: (!self.due_date_input.trim().is_empty())
-                .then(|| self.due_date_input.trim().to_owned()),
-            completed: false,
-        });
+        self.tasks.push(TaskItem::new(title));
 
         self.title_input.clear();
         self.due_date_input.clear();

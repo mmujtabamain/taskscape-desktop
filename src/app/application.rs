@@ -1,5 +1,5 @@
 use crate::app::{AppTask, Message};
-use crate::models::{Priority, Task};
+use crate::models::Task;
 use crate::thememanager::{ThemeMode, app_theme};
 use crate::utils::fonts;
 use iced::{Settings, Size, Subscription, Theme, application, keyboard, window};
@@ -10,7 +10,6 @@ pub struct Taskscape {
     pub(crate) theme_mode: ThemeMode,
     pub(crate) title_input: String,
     pub(crate) due_date_input: String,
-    pub(crate) composer_priority: Priority,
     pub(crate) status_message: String,
     pub(crate) undo_stack: Vec<crate::app::snapshot::AppSnapshot>,
     pub(crate) redo_stack: Vec<crate::app::snapshot::AppSnapshot>,
@@ -20,11 +19,10 @@ pub struct Taskscape {
 impl Default for Taskscape {
     fn default() -> Self {
         Self {
-            window_id: None, 
+            window_id: None,
             theme_mode: ThemeMode::Dark,
             title_input: String::new(),
             due_date_input: String::new(),
-            composer_priority: Priority::Medium,
             status_message: String::from("Ready."),
             undo_stack: Vec::new(),
             redo_stack: Vec::new(),

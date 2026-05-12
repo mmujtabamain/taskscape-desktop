@@ -1,7 +1,6 @@
 use crate::app::{AppElement, Message, Taskscape};
-use crate::models::Priority;
 use crate::thememanager::ButtonKind;
-use crate::widgets::{app_input, labeled_button, metric_card, styled_dropdown};
+use crate::widgets::{app_input, labeled_button, metric_card};
 use iced::Alignment;
 use iced::Length;
 use iced::widget::{column, row};
@@ -9,12 +8,9 @@ use lucide_icons::Icon;
 
 impl Taskscape {
     pub(crate) fn tasks_view(&self) -> AppElement<'_> {
-        let mut content = column![
-            self.header(),
-            self.composer_row(),
-        ]
-        .height(Length::Fill)
-        .spacing(16);
+        let mut content = column![self.header(), self.composer_row(),]
+            .height(Length::Fill)
+            .spacing(16);
 
         content = content
             .push(self.metrics_row())
@@ -34,21 +30,6 @@ impl Taskscape {
                 Length::Fill,
                 Some(Message::AddTask),
             ),
-            styled_dropdown(
-                self.theme_mode,
-                &Priority::ALL[..],
-                Some(self.composer_priority),
-                Message::ComposerPriorityChanged,
-                Length::Fixed(190.0),
-            ),
-            app_input(
-                self.theme_mode,
-                "dd/mm/yyyy",
-                &self.due_date_input,
-                Message::DueDateChanged,
-                Length::Fixed(150.0),
-                None,
-            ),
             labeled_button(
                 self.theme_mode,
                 Some(Icon::CirclePlus),
@@ -66,7 +47,11 @@ impl Taskscape {
         row![
             metric_card(self.theme_mode, self.total_count().to_string(), "Total"),
             metric_card(self.theme_mode, self.open_count().to_string(), "Open"),
-            metric_card(self.theme_mode, self.completed_count().to_string(), "Completed"),
+            metric_card(
+                self.theme_mode,
+                self.completed_count().to_string(),
+                "Completed"
+            ),
         ]
         .spacing(8)
         .into()

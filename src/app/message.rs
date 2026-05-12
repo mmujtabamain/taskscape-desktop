@@ -1,5 +1,4 @@
 use crate::app::native_menu::NativeMenuCommand;
-use crate::models::Priority;
 use iced::{keyboard, window};
 use std::path::PathBuf;
 
@@ -9,7 +8,6 @@ pub enum Message {
     ToggleTheme,
     TitleChanged(String),
     DueDateChanged(String),
-    ComposerPriorityChanged(Priority),
     ToggleTaskCompleted(usize, bool),
     AddTask,
     ClearCompleted,

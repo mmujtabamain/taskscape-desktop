@@ -12,7 +12,6 @@ impl Taskscape {
             }
             Message::TitleChanged(value) => self.title_input = value,
             Message::DueDateChanged(value) => self.due_date_input = value,
-            Message::ComposerPriorityChanged(value) => self.composer_priority = value,
             Message::ToggleTaskCompleted(index, completed) => {
                 self.toggle_task_completed(index, completed)
             }

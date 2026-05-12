@@ -58,8 +58,7 @@ impl Taskscape {
         column![
             row![
                 column![
-                    crate::widgets::caption("TODO", 11.0, palette.text_muted),
-                    heading("Taskscape Desktop", 40.0, palette.text_primary),
+                    heading("Taskscape", 40.0, palette.text_primary),
                     body(
                         format!("{} tasks in this list.", self.total_count()),
                         15.0,

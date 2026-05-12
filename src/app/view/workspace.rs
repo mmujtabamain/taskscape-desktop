@@ -1,7 +1,7 @@
 use crate::app::{AppElement, Message, Taskscape};
 use crate::models::Task;
 use crate::thememanager::{empty_state_container, panel_alt_container, tokens};
-use crate::widgets::{body, heading, small_chip};
+use crate::widgets::{body, heading};
 use iced::Alignment;
 use iced::Length;
 use iced::widget::{Space, checkbox, column, container, row, scrollable};
@@ -31,9 +31,11 @@ impl Taskscape {
             .style(empty_state_container(self.theme_mode))
             .into()
         } else {
-            let list = tasks.iter().fold(column![].spacing(12), |column, (index, task)| {
-                column.push(self.task_card(*index, task))
-            });
+            let list = tasks
+                .iter()
+                .fold(column![].spacing(12), |column, (index, task)| {
+                    column.push(self.task_card(*index, task))
+                });
 
             let list = scrollable(list).height(Length::Fill);
 
@@ -49,16 +51,6 @@ impl Taskscape {
     fn task_card<'a>(&'a self, index: usize, task: &'a Task) -> AppElement<'a> {
         let palette = tokens(self.theme_mode);
 
-        let meta = row![
-            small_chip(self.theme_mode, task.priority.short_label(), true),
-            match task.due_date.as_deref() {
-                Some(date) => small_chip(self.theme_mode, date, false),
-                None => small_chip(self.theme_mode, "No due date", false),
-            },
-        ]
-        .spacing(6)
-        .align_y(Alignment::Center);
-
         container(
             column![
                 row![
@@ -68,20 +60,16 @@ impl Taskscape {
                     column![
                         heading(&task.title, 20.0, palette.text_primary),
                         body(
-                            if task.completed {
-                                "Completed"
-                            } else {
-                                "Open"
-                            },
+                            if task.completed { "Completed" } else { "Open" },
                             14.0,
                             palette.text_secondary,
                         )
                     ]
                     .spacing(4),
-                    Space::new().width(Length::Fill),
-                    meta,
+                    Space::new().width(Length::Fill)
                 ]
-                .align_y(Alignment::Center),
+                .align_y(Alignment::Center)
+                .spacing(12),
             ]
             .spacing(12),
         )
