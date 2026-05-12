@@ -32,6 +32,21 @@ pub enum NativeMenuCommand {
     ToggleTheme,
 }
 
+#[cfg(target_os = "macos")]
+fn install_menu() -> Result<(), String> {
+    if is_installed() {
+        return Ok(());
+    }
+
+    let menu = build_menu().map_err(|e| e.to_string())?;
+    menu.init_for_nsapp();
+
+    // Keep the menu alive for the app lifetime.
+    MENU_HANDLE.with(|slot| *slot.borrow_mut() = Some(menu));
+    MENU_INSTALLED.with(|flag| flag.set(true));
+    Ok(())
+}
+
 #[cfg(target_os = "windows")]
 fn install_menu(window: &dyn HasWindowHandle) -> Result<(), String> {
     if is_installed() {
@@ -39,9 +54,6 @@ fn install_menu(window: &dyn HasWindowHandle) -> Result<(), String> {
     }
 
     let menu = build_menu().map_err(|e| e.to_string())?;
-
-    #[cfg(target_os = "macos")]
-    menu.init_for_nsapp();
 
     #[cfg(target_os = "windows")]
     {
@@ -79,11 +91,19 @@ pub fn install_for_window(window: &dyn HasWindowHandle) -> Result<(), String> {
     install_menu(window)
 }
 
-#[cfg(not(target_os = "windows"))]
+#[cfg(target_os = "macos")]
 pub fn install_for_window(
     _window: &dyn iced::window::raw_window_handle::HasWindowHandle,
 ) -> Result<(), String> {
-    // No-op on macOS — menu is installed in subscription() before the stream starts.
+    install_menu()
+}
+
+#[cfg(not(target_os = "windows"))]
+#[cfg(not(target_os = "macos"))]
+pub fn install_for_window(
+    _window: &dyn iced::window::raw_window_handle::HasWindowHandle,
+) -> Result<(), String> {
+    // No-op on unsupported platforms.
     Ok(())
 }
 
@@ -94,13 +114,8 @@ pub fn subscription() -> Subscription<NativeMenuCommand> {
     #[cfg(target_os = "macos")]
     {
         if !is_installed() {
-            println!("Installing macOS menu...");
-            if let Ok(menu) = build_menu() {
-                menu.init_for_nsapp();
-                println!("macOS menu installed successfully");
-                MENU_INSTALLED.with(|flag| flag.set(true));
-            } else {
-                eprintln!("Failed to build menu!");
+            if let Err(error) = install_menu() {
+                eprintln!("Failed to install native macOS menu: {error}");
             }
         }
     }

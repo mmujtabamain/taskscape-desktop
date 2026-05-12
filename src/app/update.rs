@@ -41,6 +41,7 @@ impl Taskscape {
             Message::EditUndo => self.undo(),
             Message::EditRedo => self.redo(),
             Message::WindowOpened(window_id) => {
+                self.window_id = Some(window_id);
                 return window::run(window_id, |window| {
                     crate::app::native_menu::install_for_window(window)
                 })
@@ -57,8 +58,7 @@ impl Taskscape {
                     NativeMenuCommand::ToggleTheme => {
                         self.push_history();
                         self.theme_mode = self.theme_mode.toggled();
-                        self.status_message =
-                            format!("Switched to {}.", self.theme_mode.label());
+                        self.status_message = format!("Switched to {}.", self.theme_mode.label());
                     }
                 }
             }
@@ -70,6 +70,11 @@ impl Taskscape {
             Message::KeyboardEvent(event) => {
                 if let keyboard::Event::KeyPressed { key, modifiers, .. } = event {
                     use iced::keyboard::Key;
+
+                    // Check for platform-specific window management shortcuts
+                    if let Some(task) = self.platform_window_shortcuts(&key, &modifiers) {
+                        return task;
+                    }
 
                     let command = modifiers.command();
 
@@ -85,6 +90,7 @@ impl Taskscape {
                             self.status_message =
                                 format!("Switched to {}.", self.theme_mode.label());
                         }
+
                         _ => {}
                     }
                 }
@@ -93,5 +99,77 @@ impl Taskscape {
 
         Task::none()
     }
-}
 
+    /// Platform-specific window management shortcuts
+    fn platform_window_shortcuts(
+        &self,
+        key: &iced::keyboard::Key,
+        modifiers: &keyboard::Modifiers,
+    ) -> Option<AppTask> {
+        use iced::keyboard::Key;
+
+        let id = self.window_id?;
+
+        // ===== macOS =====
+        #[cfg(target_os = "macos")]
+        {
+            match key.as_ref() {
+                // Globe key shortcuts
+                Key::Character("f") if modifiers.command() => {
+                    return Some(window::toggle_maximize(id));
+                }
+                Key::Character("m") if modifiers.command() => {
+                    return Some(window::minimize(id, true));
+                }
+                Key::Character("q") if modifiers.command() => {
+                    return Some(window::close(id));
+                }
+                Key::Character("w") if modifiers.command() => {
+                    return Some(window::close(id));
+                }
+
+                _ => {}
+            }
+        }
+
+        // ===== Windows =====
+        #[cfg(target_os = "windows")]
+        {
+            let logo = modifiers.logo(); // Windows key
+
+            match key.as_ref() {
+                Key::Character("f") if logo => return Some(window::toggle_maximize(id)),
+                Key::Character("m") if logo => return Some(window::minimize(id, true)),
+                Key::Character("w") if logo => return Some(window::close(id)),
+
+                // Alt+F4 (Windows quit)
+                Key::Named(iced::keyboard::key::Named::F4) if modifiers.alt() => {
+                    return Some(window::close(id));
+                }
+
+                _ => {}
+            }
+        }
+
+        // ===== Linux =====
+        #[cfg(target_os = "linux")]
+        {
+            let logo = modifiers.logo(); // Super key
+
+            match key.as_ref() {
+                Key::Character("f") if logo => return Some(window::toggle_maximize(id)),
+                Key::Character("m") if logo => return Some(window::minimize(id, true)),
+                Key::Character("w") if logo => return Some(window::close(id)),
+
+                // Alt+F4 (Linux quit)
+                Key::Named(iced::keyboard::key::Named::F4) if modifiers.alt() => {
+                    return Some(window::close(id));
+                }
+
+                _ => {}
+            }
+        }
+
+        None
+    }
+}

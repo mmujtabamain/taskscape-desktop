@@ -6,6 +6,7 @@ use iced::{Settings, Size, Subscription, Theme, application, keyboard, window};
 
 #[derive(Debug, Clone)]
 pub struct Taskscape {
+    pub(crate) window_id: Option<window::Id>,
     pub(crate) theme_mode: ThemeMode,
     pub(crate) title_input: String,
     pub(crate) due_date_input: String,
@@ -19,6 +20,7 @@ pub struct Taskscape {
 impl Default for Taskscape {
     fn default() -> Self {
         Self {
+            window_id: None, 
             theme_mode: ThemeMode::Dark,
             title_input: String::new(),
             due_date_input: String::new(),
