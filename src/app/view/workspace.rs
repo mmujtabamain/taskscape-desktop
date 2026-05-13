@@ -1,7 +1,7 @@
 use crate::app::{AppElement, Message, Taskscape};
 use crate::models::Task;
 use crate::thememanager::{empty_state_container, panel_alt_container, tokens};
-use crate::widgets::{body, heading};
+use crate::widgets::{t_body, t_heading};
 use iced::Alignment;
 use iced::Length;
 use iced::widget::{Space, checkbox, column, container, row, scrollable};
@@ -14,8 +14,8 @@ impl Taskscape {
         if tasks.is_empty() {
             container(
                 column![
-                    heading("No tasks yet", 30.0, palette.text_primary),
-                    body(
+                    t_heading("No tasks yet", 30.0, palette.text_primary),
+                    t_body(
                         "Create a task or load a CSV todo file.",
                         17.0,
                         palette.text_secondary,
@@ -58,8 +58,8 @@ impl Taskscape {
                         .on_toggle(move |completed| Message::ToggleTaskCompleted(index, completed))
                         .size(18),
                     column![
-                        heading(&task.title, 20.0, palette.text_primary),
-                        body(
+                        t_heading(&task.title, 20.0, palette.text_primary),
+                        t_body(
                             if task.completed { "Completed" } else { "Open" },
                             14.0,
                             palette.text_secondary,

@@ -4,7 +4,7 @@ use iced::Length;
 use iced::widget::pick_list;
 use std::borrow::Borrow;
 
-pub fn styled_dropdown<'a, T, L, V>(
+pub fn t_dropdown<'a, T, L, V>(
     theme_mode: ThemeMode,
     options: L,
     selected: Option<V>,

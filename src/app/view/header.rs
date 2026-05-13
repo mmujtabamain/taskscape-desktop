@@ -1,6 +1,6 @@
 use crate::app::{AppElement, Message, Taskscape};
 use crate::thememanager::{panel_alt_container, tokens};
-use crate::widgets::{body, heading, icon_button};
+use crate::widgets::{t_body, t_heading, t_icon_button};
 use iced::Alignment;
 use iced::Length;
 use iced::widget::{Space, column, container, row};
@@ -11,25 +11,20 @@ impl Taskscape {
         let palette = tokens(self.theme_mode);
 
         let controls = row![
-            icon_button(
+            t_icon_button(
                 self.theme_mode,
                 Icon::FilePlus,
                 None,
                 Some(Message::FileNew),
             ),
-            icon_button(
-                self.theme_mode,
-                Icon::Save,
-                None,
-                Some(Message::FileSave),
-            ),
-            icon_button(
+            t_icon_button(self.theme_mode, Icon::Save, None, Some(Message::FileSave),),
+            t_icon_button(
                 self.theme_mode,
                 Icon::FolderOpen,
                 None,
                 Some(Message::FileLoad),
             ),
-            icon_button(
+            t_icon_button(
                 self.theme_mode,
                 if self.theme_mode == crate::thememanager::ThemeMode::Dark {
                     Icon::Sun
@@ -39,13 +34,13 @@ impl Taskscape {
                 None,
                 Some(Message::ToggleTheme),
             ),
-            icon_button(
+            t_icon_button(
                 self.theme_mode,
                 Icon::Undo2,
                 Some(self.undo_stack.len() as u32),
                 Some(Message::EditUndo),
             ),
-            icon_button(
+            t_icon_button(
                 self.theme_mode,
                 Icon::Redo2,
                 Some(self.redo_stack.len() as u32),
@@ -58,8 +53,8 @@ impl Taskscape {
         column![
             row![
                 column![
-                    heading("Taskscape", 40.0, palette.text_primary),
-                    body(
+                    t_heading("Taskscape", 40.0, palette.text_primary),
+                    t_body(
                         format!("{} tasks in this list.", self.total_count()),
                         15.0,
                         palette.text_secondary,

@@ -1,6 +1,6 @@
 use crate::app::{AppElement, Message, Taskscape};
 use crate::thememanager::ButtonKind;
-use crate::widgets::{app_input, labeled_button, metric_card};
+use crate::widgets::{t_input_box, t_button, t_metric_card};
 use iced::Alignment;
 use iced::Length;
 use iced::widget::{column, row};
@@ -22,7 +22,7 @@ impl Taskscape {
 
     fn composer_row(&self) -> AppElement<'_> {
         row![
-            app_input(
+            t_input_box(
                 self.theme_mode,
                 "Enter a task title and press Enter",
                 &self.title_input,
@@ -30,7 +30,7 @@ impl Taskscape {
                 Length::Fill,
                 Some(Message::AddTask),
             ),
-            labeled_button(
+            t_button(
                 self.theme_mode,
                 Some(Icon::CirclePlus),
                 "Add",
@@ -45,9 +45,9 @@ impl Taskscape {
 
     fn metrics_row(&self) -> AppElement<'_> {
         row![
-            metric_card(self.theme_mode, self.total_count().to_string(), "Total"),
-            metric_card(self.theme_mode, self.open_count().to_string(), "Open"),
-            metric_card(
+            t_metric_card(self.theme_mode, self.total_count().to_string(), "Total"),
+            t_metric_card(self.theme_mode, self.open_count().to_string(), "Open"),
+            t_metric_card(
                 self.theme_mode,
                 self.completed_count().to_string(),
                 "Completed"
@@ -59,14 +59,14 @@ impl Taskscape {
 
     fn actions_row(&self) -> AppElement<'_> {
         row![
-            labeled_button(
+            t_button(
                 self.theme_mode,
                 Some(Icon::CheckCheck),
                 "Clear completed",
                 ButtonKind::Ghost,
                 Some(Message::ClearCompleted),
             ),
-            labeled_button(
+            t_button(
                 self.theme_mode,
                 Some(Icon::CircleX),
                 "Clear all",

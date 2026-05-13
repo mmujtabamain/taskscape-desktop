@@ -27,9 +27,9 @@ impl Taskscape {
 
         container(
             row![
-                crate::widgets::body(&self.status_message, 14.0, palette.text_secondary),
+                crate::widgets::t_body(&self.status_message, 14.0, palette.text_secondary),
                 iced::widget::Space::new().width(Length::Fill),
-                crate::widgets::caption(self.theme_mode.label(), 12.0, palette.text_muted),
+                crate::widgets::t_caption(self.theme_mode.label(), 12.0, palette.text_muted),
             ]
             .spacing(12),
         )

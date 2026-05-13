@@ -3,7 +3,7 @@ use crate::thememanager::{ThemeMode, text_input_style};
 use iced::Length;
 use iced::widget::text_input;
 
-pub fn app_input<'a>(
+pub fn t_input_box<'a>(
     theme_mode: ThemeMode,
     placeholder: &'a str,
     value: &'a str,
