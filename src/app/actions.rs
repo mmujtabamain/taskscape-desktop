@@ -1,7 +1,7 @@
 use crate::app::snapshot::AppSnapshot;
 use crate::app::{AppTask, Message, Taskscape};
 use crate::models::Task as TaskItem;
-use crate::utils::persistence::{TODO_FILE, load_todos_from_path, save_todos_to_path};
+use crate::utils::persistence::{load_todos_from_path, save_todos_to_path};
 use iced::Task;
 use std::path::PathBuf;
 
@@ -75,12 +75,13 @@ impl Taskscape {
 
     /// Opens the native Save dialog asynchronously (non-blocking).
     /// Result arrives as Message::FileSaveResult.
-    pub(crate) fn launch_save_dialog() -> AppTask {
+    pub(crate) fn launch_save_dialog(&self) -> AppTask {
+        let file_name = format!("{}.csv", self.file_name);
         Task::perform(
-            async {
+            async move {
                 let handle = rfd::AsyncFileDialog::new()
                     .set_title("Save Tasks")
-                    .set_file_name(TODO_FILE)
+                    .set_file_name(&file_name)
                     .add_filter("CSV", &["csv"])
                     .save_file()
                     .await;
@@ -121,6 +122,9 @@ impl Taskscape {
                 self.push_history();
                 let count = tasks.len();
                 self.tasks = tasks;
+                if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
+                    self.file_name = stem.to_owned();
+                }
                 self.status_message = format!("Loaded {count} tasks from {}.", path.display());
             }
             Err(msg) => self.status_message = msg,

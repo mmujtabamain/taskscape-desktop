@@ -14,10 +14,15 @@ pub struct Taskscape {
     pub(crate) undo_stack: Vec<crate::app::snapshot::AppSnapshot>,
     pub(crate) redo_stack: Vec<crate::app::snapshot::AppSnapshot>,
     pub(crate) tasks: Vec<Task>,
+    pub(crate) file_name: String,
+    pub(crate) file_name_editing: String,
+    pub(crate) editing_title: bool,
 }
 
 impl Default for Taskscape {
     fn default() -> Self {
+        const DEFAULT_FILE_NAME: &'static str = "Untitled";
+
         Self {
             window_id: None,
             theme_mode: ThemeMode::Dark,
@@ -27,11 +32,19 @@ impl Default for Taskscape {
             undo_stack: Vec::new(),
             redo_stack: Vec::new(),
             tasks: Vec::new(),
+            file_name: String::from(DEFAULT_FILE_NAME),
+            file_name_editing: String::from(DEFAULT_FILE_NAME),
+            editing_title: false,
         }
     }
 }
 
 impl Taskscape {
+    /// Check if any editing mode is active in the app
+    pub(crate) fn is_any_editing(&self) -> bool {
+        self.editing_title
+    }
+
     pub(crate) fn boot() -> (Self, AppTask) {
         // Load custom fonts via Task so they are guaranteed to be available
         // before the first view call, complementing the builder .font() calls.

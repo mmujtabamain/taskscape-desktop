@@ -10,6 +10,33 @@ impl Taskscape {
                 self.status_message = format!("Switched to {}.", self.theme_mode.label());
             }
             Message::TitleChanged(value) => self.title_input = value,
+            Message::FileNameChanged(value) => self.file_name_editing = value,
+            Message::ToggleTitleEdit => {
+                if self.editing_title {
+                    // Exiting edit mode - save changes
+                    self.file_name = self.file_name_editing.clone();
+                }
+                self.editing_title = !self.editing_title;
+                if self.editing_title {
+                    // Entering edit mode - prepare editing and move cursor to end
+                    self.file_name_editing = self.file_name.clone();
+                    return iced::widget::operation::move_cursor_to_end(
+                        crate::widgets::t_editable_title::TITLE_INPUT_ID,
+                    );
+                }
+            }
+            Message::ToggleTitleEditCancel => {
+                // Discard changes and exit edit mode
+                self.file_name_editing = self.file_name.clone();
+                self.editing_title = false;
+            }
+            Message::CancelAllEditing => {
+                // Cancel all editing modes in the app
+                if self.editing_title {
+                    self.file_name_editing = self.file_name.clone();
+                    self.editing_title = false;
+                }
+            }
             Message::DueDateChanged(value) => self.due_date_input = value,
             Message::ToggleTaskCompleted(index, completed) => {
                 self.toggle_task_completed(index, completed)
@@ -26,7 +53,7 @@ impl Taskscape {
                 self.status_message = String::from("All tasks removed.");
             }
             Message::FileNew => self.new_list("Started a new list."),
-            Message::FileSave => return Self::launch_save_dialog(),
+            Message::FileSave => return self.launch_save_dialog(),
             Message::FileLoad => return Self::launch_load_dialog(),
             Message::FileSaveResult(Some(path)) => self.complete_save(path),
             Message::FileSaveResult(None) => {
@@ -49,7 +76,7 @@ impl Taskscape {
                 use crate::app::native_menu::NativeMenuCommand;
                 match command {
                     NativeMenuCommand::FileNew => self.new_list("Started a new list."),
-                    NativeMenuCommand::FileSave => return Self::launch_save_dialog(),
+                    NativeMenuCommand::FileSave => return self.launch_save_dialog(),
                     NativeMenuCommand::FileLoad => return Self::launch_load_dialog(),
                     NativeMenuCommand::EditUndo => self.undo(),
                     NativeMenuCommand::EditRedo => self.redo(),
@@ -78,7 +105,7 @@ impl Taskscape {
                     match key.as_ref() {
                         Key::Character("z") if command && modifiers.shift() => self.redo(),
                         Key::Character("z") if command => self.undo(),
-                        Key::Character("s") if command => return Self::launch_save_dialog(),
+                        Key::Character("s") if command => return self.launch_save_dialog(),
                         Key::Character("o") if command => return Self::launch_load_dialog(),
                         Key::Character("n") if command => self.new_list("Started a new list."),
                         Key::Character("t") if command => {
@@ -86,7 +113,11 @@ impl Taskscape {
                             self.status_message =
                                 format!("Switched to {}.", self.theme_mode.label());
                         }
-
+                        Key::Named(iced::keyboard::key::Named::Escape) if self.editing_title => {
+                            // Discard title edit on ESC
+                            self.file_name_editing = self.file_name.clone();
+                            self.editing_title = false;
+                        }
                         _ => {}
                     }
                 }

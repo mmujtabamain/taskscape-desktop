@@ -1,6 +1,6 @@
 use crate::app::{AppElement, Message, Taskscape};
 use crate::thememanager::{panel_alt_container, tokens};
-use crate::widgets::{t_body, t_heading, t_icon_button};
+use crate::widgets::{t_body, t_editable_title, t_icon_button};
 use iced::Alignment;
 use iced::Length;
 use iced::widget::{Space, column, container, row};
@@ -52,18 +52,29 @@ impl Taskscape {
 
         column![
             row![
-                column![
-                    t_heading("Taskscape", 40.0, palette.text_primary),
-                    t_body(
-                        format!("{} tasks in this list.", self.total_count()),
-                        15.0,
-                        palette.text_secondary,
-                    ),
-                ]
-                .spacing(6),
-                Space::new().width(Length::Fill),
+                {
+                    let title_section = column![
+                        t_editable_title(
+                            self.theme_mode,
+                            &self.file_name_editing,
+                            self.editing_title,
+                            Message::FileNameChanged,
+                            Message::ToggleTitleEdit,
+                        ),
+                        t_body(
+                            format!("{} tasks in this list.", self.total_count()),
+                            15.0,
+                            palette.text_secondary,
+                        ),
+                    ]
+                    .spacing(8)
+                    .width(Length::Fill);
+
+                    container(title_section).width(Length::Fill)
+                },
                 controls,
             ]
+            .spacing(16)
             .align_y(Alignment::Start),
             container(Space::new().height(Length::Fixed(1.0)))
                 .width(Length::Fill)

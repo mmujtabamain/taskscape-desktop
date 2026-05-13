@@ -2,15 +2,15 @@ pub mod header;
 pub mod tasks;
 pub mod workspace;
 
-use crate::app::{AppElement, Taskscape};
+use crate::app::{AppElement, Message, Taskscape};
 use crate::thememanager::{panel_alt_container, shell_container, tokens};
 use crate::widgets::{t_body, t_caption};
-use iced::widget::{column, container, row};
+use iced::widget::{column, container, mouse_area, row};
 use iced::{Alignment, Length};
 
 impl Taskscape {
     pub(crate) fn view_root(&self) -> AppElement<'_> {
-        container(
+        let content = container(
             column![self.tasks_view(), self.status_bar()]
                 .width(Length::Fill)
                 .height(Length::Fill)
@@ -19,8 +19,16 @@ impl Taskscape {
         )
         .width(Length::Fill)
         .height(Length::Fill)
-        .style(shell_container(self.theme_mode))
-        .into()
+        .style(shell_container(self.theme_mode));
+
+        // If any editing is active, wrap with mouse_area to detect clicks outside
+        if self.is_any_editing() {
+            mouse_area(content)
+                .on_press(Message::CancelAllEditing)
+                .into()
+        } else {
+            content.into()
+        }
     }
 
     fn status_bar(&self) -> AppElement<'_> {
