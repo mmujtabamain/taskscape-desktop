@@ -4,8 +4,9 @@ pub mod workspace;
 
 use crate::app::{AppElement, Taskscape};
 use crate::thememanager::{panel_alt_container, shell_container, tokens};
-use iced::Length;
+use crate::widgets::{t_body, t_caption};
 use iced::widget::{column, container, row};
+use iced::{Alignment, Length};
 
 impl Taskscape {
     pub(crate) fn view_root(&self) -> AppElement<'_> {
@@ -25,11 +26,36 @@ impl Taskscape {
     fn status_bar(&self) -> AppElement<'_> {
         let palette = tokens(self.theme_mode);
 
+        macro_rules! metric_text {
+            ($value:expr, $label:expr) => {
+                format!("{} {}", $value, $label)
+            };
+        }
+
         container(
             row![
-                crate::widgets::t_body(&self.status_message, 14.0, palette.text_secondary),
+                t_body(&self.status_message, 14.0, palette.text_secondary),
                 iced::widget::Space::new().width(Length::Fill),
-                crate::widgets::t_caption(self.theme_mode.label(), 12.0, palette.text_muted),
+                t_caption(
+                    metric_text!(&self.total_count(), "Total"),
+                    12.0,
+                    palette.text_muted
+                )
+                .align_x(Alignment::End),
+                t_caption(
+                    metric_text!(&self.completed_count(), "Completed"),
+                    12.0,
+                    palette.text_muted
+                )
+                .align_x(Alignment::End),
+                t_caption(
+                    metric_text!(&self.open_count(), "Remaining"),
+                    12.0,
+                    palette.text_muted
+                )
+                .align_x(Alignment::End),
+                t_caption(self.theme_mode.label(), 12.0, palette.text_muted)
+                    .align_x(Alignment::End),
             ]
             .spacing(12),
         )

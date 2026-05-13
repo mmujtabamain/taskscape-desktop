@@ -1,6 +1,6 @@
 use crate::app::{AppElement, Message, Taskscape};
 use crate::thememanager::ButtonKind;
-use crate::widgets::{t_input_box, t_button, t_metric_card};
+use crate::widgets::{t_button, t_input_box};
 use iced::Alignment;
 use iced::Length;
 use iced::widget::{column, row};
@@ -13,7 +13,6 @@ impl Taskscape {
             .spacing(16);
 
         content = content
-            .push(self.metrics_row())
             .push(self.actions_row())
             .push(self.task_list_panel());
 
@@ -40,20 +39,6 @@ impl Taskscape {
         ]
         .spacing(10)
         .align_y(Alignment::Center)
-        .into()
-    }
-
-    fn metrics_row(&self) -> AppElement<'_> {
-        row![
-            t_metric_card(self.theme_mode, self.total_count().to_string(), "Total"),
-            t_metric_card(self.theme_mode, self.open_count().to_string(), "Open"),
-            t_metric_card(
-                self.theme_mode,
-                self.completed_count().to_string(),
-                "Completed"
-            ),
-        ]
-        .spacing(8)
         .into()
     }
 
