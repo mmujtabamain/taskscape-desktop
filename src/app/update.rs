@@ -6,7 +6,6 @@ impl Taskscape {
         match message {
             Message::FontLoaded => {} // Fonts loaded, trigger redraw via Task::none()
             Message::ToggleTheme => {
-                self.push_history();
                 self.theme_mode = self.theme_mode.toggled();
                 self.status_message = format!("Switched to {}.", self.theme_mode.label());
             }
@@ -55,7 +54,6 @@ impl Taskscape {
                     NativeMenuCommand::EditUndo => self.undo(),
                     NativeMenuCommand::EditRedo => self.redo(),
                     NativeMenuCommand::ToggleTheme => {
-                        self.push_history();
                         self.theme_mode = self.theme_mode.toggled();
                         self.status_message = format!("Switched to {}.", self.theme_mode.label());
                     }
@@ -84,7 +82,6 @@ impl Taskscape {
                         Key::Character("o") if command => return Self::launch_load_dialog(),
                         Key::Character("n") if command => self.new_list("Started a new list."),
                         Key::Character("t") if command => {
-                            self.push_history();
                             self.theme_mode = self.theme_mode.toggled();
                             self.status_message =
                                 format!("Switched to {}.", self.theme_mode.label());

@@ -8,17 +8,11 @@ use std::path::PathBuf;
 impl Taskscape {
     pub(crate) fn snapshot(&self) -> AppSnapshot {
         AppSnapshot {
-            theme_mode: self.theme_mode,
-            title_input: self.title_input.clone(),
-            due_date_input: self.due_date_input.clone(),
             tasks: self.tasks.clone(),
         }
     }
 
     pub(crate) fn restore_snapshot(&mut self, snapshot: AppSnapshot) {
-        self.theme_mode = snapshot.theme_mode;
-        self.title_input = snapshot.title_input;
-        self.due_date_input = snapshot.due_date_input;
         self.tasks = snapshot.tasks;
     }
 
@@ -76,8 +70,6 @@ impl Taskscape {
     pub(crate) fn new_list(&mut self, status: &'static str) {
         self.push_history();
         self.tasks.clear();
-        self.title_input.clear();
-        self.due_date_input.clear();
         self.status_message = status.to_owned();
     }
 
