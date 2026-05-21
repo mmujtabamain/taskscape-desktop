@@ -65,9 +65,13 @@ impl Taskscape {
                 t_caption(self.theme_mode.label(), 12.0, palette.text_muted)
                     .align_x(Alignment::End),
             ]
-            .spacing(12),
+            .spacing(12)
+            .align_y(Alignment::Center),
         )
-        .padding([10, 14])
+        .width(Length::Fill)
+        .height(Length::Fixed(34.0))
+        .align_y(Alignment::Center)
+        .padding([0, 14])
         .style(panel_alt_container(self.theme_mode))
         .into()
     }
