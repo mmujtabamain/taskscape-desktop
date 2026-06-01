@@ -4,6 +4,7 @@ pub mod message;
 pub mod native_menu;
 pub mod queries;
 pub mod snapshot;
+pub mod tray;
 pub mod update;
 pub mod view;
 

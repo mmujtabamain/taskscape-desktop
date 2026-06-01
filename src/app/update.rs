@@ -67,10 +67,14 @@ impl Taskscape {
             Message::EditRedo => self.redo(),
             Message::WindowOpened(window_id) => {
                 self.window_id = Some(window_id);
-                return window::run(window_id, |window| {
+                // Both installers must run on the UI thread; window::run guarantees that.
+                let install_menu = window::run(window_id, |window| {
                     crate::app::native_menu::install_for_window(window)
                 })
                 .map(Message::NativeMenuInstalled);
+                let install_tray = window::run(window_id, |_window| crate::app::tray::install())
+                    .map(Message::TrayInstalled);
+                return Task::batch([install_menu, install_tray]);
             }
             Message::NativeMenuEvent(command) => {
                 use crate::app::native_menu::NativeMenuCommand;
@@ -89,6 +93,37 @@ impl Taskscape {
             Message::NativeMenuInstalled(result) => {
                 if let Err(error) = result {
                     self.status_message = format!("Native menu: {error}");
+                }
+            }
+            Message::WindowCloseRequested(id) => {
+                // macOS: hide into the menu bar instead of quitting. Clicking the
+                // tray icon brings the window back. Other platforms close normally.
+                #[cfg(target_os = "macos")]
+                {
+                    self.status_message = String::from("Hidden to the menu bar.");
+                    return window::set_mode(id, window::Mode::Hidden);
+                }
+                #[cfg(not(target_os = "macos"))]
+                return window::close(id);
+            }
+            Message::TrayEvent(command) => {
+                use crate::app::tray::TrayCommand;
+                match command {
+                    TrayCommand::ShowWindow => {
+                        if let Some(id) = self.window_id {
+                            // Reveal, un-minimize, and bring the window to the front.
+                            return Task::batch([
+                                window::set_mode(id, window::Mode::Windowed),
+                                window::minimize(id, false),
+                                window::gain_focus(id),
+                            ]);
+                        }
+                    }
+                }
+            }
+            Message::TrayInstalled(result) => {
+                if let Err(error) = result {
+                    self.status_message = format!("Menu bar icon: {error}");
                 }
             }
             Message::KeyboardEvent(event) => {
@@ -149,10 +184,12 @@ impl Taskscape {
                     return Some(window::minimize(id, true));
                 }
                 Key::Character("q") if modifiers.command() => {
+                    // Real quit.
                     return Some(window::close(id));
                 }
                 Key::Character("w") if modifiers.command() => {
-                    return Some(window::close(id));
+                    // Close window = hide into the menu bar.
+                    return Some(window::set_mode(id, window::Mode::Hidden));
                 }
 
                 _ => {}

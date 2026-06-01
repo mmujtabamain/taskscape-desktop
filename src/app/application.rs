@@ -68,7 +68,9 @@ impl Taskscape {
         Subscription::batch([
             keyboard::listen().map(Message::KeyboardEvent),
             window::open_events().map(Message::WindowOpened),
+            window::close_requests().map(Message::WindowCloseRequested),
             crate::app::native_menu::subscription().map(Message::NativeMenuEvent),
+            crate::app::tray::subscription().map(Message::TrayEvent),
         ])
     }
 }
@@ -80,6 +82,10 @@ pub fn run() -> iced::Result {
         .subscription(Taskscape::subscription)
         .window(window::Settings {
             min_size: Some(Size::new(980.0, 680.0)),
+            // On macOS we intercept the close request to hide the window into the
+            // menu bar instead of quitting. Other platforms keep the default
+            // (close = quit) until their tray support lands.
+            exit_on_close_request: !cfg!(target_os = "macos"),
             ..window::Settings::default()
         })
         .font(fonts::INTER_REGULAR_BYTES)

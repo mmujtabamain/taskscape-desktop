@@ -1,4 +1,5 @@
 use crate::app::native_menu::NativeMenuCommand;
+use crate::app::tray::TrayCommand;
 use iced::{keyboard, window};
 use std::path::PathBuf;
 
@@ -24,7 +25,10 @@ pub enum Message {
     EditUndo,
     EditRedo,
     WindowOpened(window::Id),
+    WindowCloseRequested(window::Id),
     NativeMenuEvent(NativeMenuCommand),
     NativeMenuInstalled(Result<(), String>),
+    TrayEvent(TrayCommand),
+    TrayInstalled(Result<(), String>),
     KeyboardEvent(keyboard::Event),
 }
