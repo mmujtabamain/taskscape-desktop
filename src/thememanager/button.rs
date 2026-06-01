@@ -63,6 +63,7 @@ pub fn button_style(
             }
             button::Status::Pressed => {
                 style.shadow = iced::Shadow::default();
+                style.border.color = palette.border_strong;
                 style
             }
             button::Status::Disabled => button::Style {

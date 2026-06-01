@@ -68,7 +68,8 @@ impl Taskscape {
     }
 
     pub(crate) fn new_list(&mut self, status: &'static str) {
-        self.push_history();
+        self.undo_stack.clear();
+        self.redo_stack.clear();
         self.tasks.clear();
         self.status_message = status.to_owned();
     }
@@ -110,7 +111,11 @@ impl Taskscape {
     /// Persists tasks to path after the save dialog resolves.
     pub(crate) fn complete_save(&mut self, path: PathBuf) {
         self.status_message = match save_todos_to_path(&self.tasks, &path) {
-            Ok(msg) => msg,
+            Ok(msg) => {
+                self.undo_stack.clear();
+                self.redo_stack.clear();
+                msg
+            }
             Err(msg) => msg,
         };
     }
@@ -119,7 +124,8 @@ impl Taskscape {
     pub(crate) fn complete_load(&mut self, path: PathBuf) {
         match load_todos_from_path(&path) {
             Ok(tasks) => {
-                self.push_history();
+                self.undo_stack.clear();
+                self.redo_stack.clear();
                 let count = tasks.len();
                 self.tasks = tasks;
                 if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {

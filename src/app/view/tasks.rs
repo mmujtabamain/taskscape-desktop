@@ -13,8 +13,8 @@ impl Taskscape {
             .spacing(16);
 
         content = content
-            .push(self.actions_row())
-            .push(self.task_list_panel());
+            .push(self.task_list_panel())
+            .push(self.actions_row());
 
         content.into()
     }
