@@ -37,6 +37,16 @@ impl Taskscape {
         self.status_message = String::from("Task added.");
     }
 
+    pub(crate) fn remove_task(&mut self, index: usize) {
+        if index >= self.tasks.len() {
+            return;
+        }
+
+        self.push_history();
+        self.tasks.remove(index);
+        self.status_message = String::from("Task removed.");
+    }
+
     pub(crate) fn toggle_task_completed(&mut self, index: usize, completed: bool) {
         if index >= self.tasks.len() {
             return;

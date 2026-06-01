@@ -1,4 +1,5 @@
 pub mod header;
+pub mod mini;
 pub mod tasks;
 pub mod workspace;
 

@@ -14,6 +14,7 @@ pub enum Message {
     CancelAllEditing,
     DueDateChanged(String),
     ToggleTaskCompleted(usize, bool),
+    RemoveTask(usize),
     AddTask,
     ClearCompleted,
     ClearAll,

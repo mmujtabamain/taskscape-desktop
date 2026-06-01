@@ -42,6 +42,7 @@ impl Taskscape {
                 self.toggle_task_completed(index, completed)
             }
             Message::AddTask => self.add_task(),
+            Message::RemoveTask(index) => self.remove_task(index),
             Message::ClearCompleted => {
                 self.push_history();
                 self.tasks.retain(|task| !task.is_completed());
@@ -66,6 +67,12 @@ impl Taskscape {
             Message::EditUndo => self.undo(),
             Message::EditRedo => self.redo(),
             Message::WindowOpened(window_id) => {
+                // The mini window records its own id when opened (see TrayEvent),
+                // so anything else is the main window. Only the main window gets
+                // the native menu and menu bar icon installed.
+                if self.mini_window_id == Some(window_id) {
+                    return Task::none();
+                }
                 self.window_id = Some(window_id);
                 // Both installers must run on the UI thread; window::run guarantees that.
                 let install_menu = window::run(window_id, |window| {
@@ -96,8 +103,16 @@ impl Taskscape {
                 }
             }
             Message::WindowCloseRequested(id) => {
-                // macOS: hide into the menu bar instead of quitting. Clicking the
-                // tray icon brings the window back. Other platforms close normally.
+                // The mini window simply closes and forgets its id, regardless of
+                // platform — clicking the tray icon re-opens it.
+                if self.mini_window_id == Some(id) {
+                    self.mini_window_id = None;
+                    return window::close(id);
+                }
+
+                // Main window — macOS: hide into the menu bar instead of quitting.
+                // Clicking the tray icon brings the window back. Other platforms
+                // close normally.
                 #[cfg(target_os = "macos")]
                 {
                     self.status_message = String::from("Hidden to the menu bar.");
@@ -109,15 +124,21 @@ impl Taskscape {
             Message::TrayEvent(command) => {
                 use crate::app::tray::TrayCommand;
                 match command {
+                    // Clicking the menu bar icon toggles the compact mini window:
+                    // open + focus it if hidden, close it if already showing.
                     TrayCommand::ShowWindow => {
-                        if let Some(id) = self.window_id {
-                            // Reveal, un-minimize, and bring the window to the front.
-                            return Task::batch([
-                                window::set_mode(id, window::Mode::Windowed),
-                                window::minimize(id, false),
-                                window::gain_focus(id),
-                            ]);
+                        if let Some(id) = self.mini_window_id.take() {
+                            self.status_message = String::from("Mini window closed.");
+                            return window::close(id);
                         }
+
+                        let (id, open) = window::open(Self::mini_window_settings());
+                        self.mini_window_id = Some(id);
+                        self.status_message = String::from("Mini window opened.");
+                        return Task::batch([
+                            open.map(Message::WindowOpened),
+                            window::gain_focus(id),
+                        ]);
                     }
                 }
             }
