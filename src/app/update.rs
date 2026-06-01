@@ -122,13 +122,14 @@ impl Taskscape {
                     return window::close(id);
                 }
 
-                // Main window — macOS: hide into the menu bar instead of quitting.
-                // Clicking the tray icon brings the window back. Other platforms
-                // close normally.
+                // Main window — macOS: minimize to the Dock instead of quitting,
+                // so clicking the Dock icon restores it (the standard behaviour
+                // for closing a window while the app keeps running). Other
+                // platforms close normally.
                 #[cfg(target_os = "macos")]
                 {
-                    self.status_message = String::from("Hidden to the menu bar.");
-                    return window::set_mode(id, window::Mode::Hidden);
+                    self.status_message = String::from("Minimized to the Dock.");
+                    return window::minimize(id, true);
                 }
                 #[cfg(not(target_os = "macos"))]
                 return window::close(id);
@@ -234,8 +235,12 @@ impl Taskscape {
                     return Some(window::close(id));
                 }
                 Key::Character("w") if modifiers.command() => {
-                    // Close window = hide into the menu bar.
-                    return Some(window::set_mode(id, window::Mode::Hidden));
+                    // Minimize to the Dock rather than hide into the menu bar:
+                    // a minimized window leaves a Dock thumbnail, so clicking the
+                    // Dock icon restores it natively (winit/iced do not surface
+                    // the macOS app-reopen event, so a hidden window could not be
+                    // brought back this way).
+                    return Some(window::minimize(id, true));
                 }
 
                 _ => {}
