@@ -1,3 +1,4 @@
+use crate::app::hotkey::HotkeyCommand;
 use crate::app::native_menu::NativeMenuCommand;
 use crate::app::tray::TrayCommand;
 use iced::{keyboard, window};
@@ -26,10 +27,13 @@ pub enum Message {
     EditUndo,
     EditRedo,
     WindowOpened(window::Id),
+    WindowClosed(window::Id),
     WindowCloseRequested(window::Id),
     NativeMenuEvent(NativeMenuCommand),
     NativeMenuInstalled(Result<(), String>),
     TrayEvent(TrayCommand),
     TrayInstalled(Result<(), String>),
+    HotkeyEvent(HotkeyCommand),
+    HotkeyInstalled(Result<(), String>),
     KeyboardEvent(keyboard::Event),
 }

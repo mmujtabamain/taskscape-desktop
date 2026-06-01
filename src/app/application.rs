@@ -122,9 +122,11 @@ impl Taskscape {
         Subscription::batch([
             keyboard::listen().map(Message::KeyboardEvent),
             window::open_events().map(Message::WindowOpened),
+            window::close_events().map(Message::WindowClosed),
             window::close_requests().map(Message::WindowCloseRequested),
             crate::app::native_menu::subscription().map(Message::NativeMenuEvent),
             crate::app::tray::subscription().map(Message::TrayEvent),
+            crate::app::hotkey::subscription().map(Message::HotkeyEvent),
         ])
     }
 }

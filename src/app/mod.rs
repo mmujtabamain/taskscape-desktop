@@ -1,5 +1,6 @@
 pub mod actions;
 pub mod application;
+pub mod hotkey;
 pub mod message;
 pub mod native_menu;
 pub mod queries;

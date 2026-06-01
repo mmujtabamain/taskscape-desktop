@@ -81,7 +81,19 @@ impl Taskscape {
                 .map(Message::NativeMenuInstalled);
                 let install_tray = window::run(window_id, |_window| crate::app::tray::install())
                     .map(Message::TrayInstalled);
-                return Task::batch([install_menu, install_tray]);
+                let install_hotkey =
+                    window::run(window_id, |_window| crate::app::hotkey::install())
+                        .map(Message::HotkeyInstalled);
+                return Task::batch([install_menu, install_tray, install_hotkey]);
+            }
+            Message::WindowClosed(window_id) => {
+                // Authoritative cleanup: whenever a window actually closes (by any
+                // route), forget its id so the toggle logic stays correct.
+                if self.mini_window_id == Some(window_id) {
+                    self.mini_window_id = None;
+                } else if self.window_id == Some(window_id) {
+                    self.window_id = None;
+                }
             }
             Message::NativeMenuEvent(command) => {
                 use crate::app::native_menu::NativeMenuCommand;
@@ -124,27 +136,26 @@ impl Taskscape {
             Message::TrayEvent(command) => {
                 use crate::app::tray::TrayCommand;
                 match command {
-                    // Clicking the menu bar icon toggles the compact mini window:
-                    // open + focus it if hidden, close it if already showing.
-                    TrayCommand::ShowWindow => {
-                        if let Some(id) = self.mini_window_id.take() {
-                            self.status_message = String::from("Mini window closed.");
-                            return window::close(id);
-                        }
-
-                        let (id, open) = window::open(Self::mini_window_settings());
-                        self.mini_window_id = Some(id);
-                        self.status_message = String::from("Mini window opened.");
-                        return Task::batch([
-                            open.map(Message::WindowOpened),
-                            window::gain_focus(id),
-                        ]);
-                    }
+                    // Clicking the menu bar icon toggles the compact mini window.
+                    TrayCommand::ShowWindow => return self.toggle_mini_window(),
                 }
             }
             Message::TrayInstalled(result) => {
                 if let Err(error) = result {
                     self.status_message = format!("Menu bar icon: {error}");
+                }
+            }
+            Message::HotkeyEvent(command) => {
+                use crate::app::hotkey::HotkeyCommand;
+                match command {
+                    // Global Cmd/Ctrl+` toggles the mini window, even when
+                    // Taskscape is not the focused application.
+                    HotkeyCommand::ToggleMini => return self.toggle_mini_window(),
+                }
+            }
+            Message::HotkeyInstalled(result) => {
+                if let Err(error) = result {
+                    self.status_message = format!("Global hotkey: {error}");
                 }
             }
             Message::KeyboardEvent(event) => {
@@ -181,6 +192,20 @@ impl Taskscape {
         }
 
         Task::none()
+    }
+
+    /// Toggles the compact mini window: open + focus it if hidden, close it if
+    /// already showing. Shared by the menu bar icon and the keyboard shortcut.
+    fn toggle_mini_window(&mut self) -> AppTask {
+        if let Some(id) = self.mini_window_id.take() {
+            self.status_message = String::from("Mini window closed.");
+            return window::close(id);
+        }
+
+        let (id, open) = window::open(Self::mini_window_settings());
+        self.mini_window_id = Some(id);
+        self.status_message = String::from("Mini window opened.");
+        Task::batch([open.map(Message::WindowOpened), window::gain_focus(id)])
     }
 
     /// Platform-specific window management shortcuts

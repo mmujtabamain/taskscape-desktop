@@ -15,3 +15,4 @@ serde = { version = "1.0", features = ["derive"] }
 muda = "0.19"
 rfd = "0.15"
 tray-icon = "0.24.0"
+global-hotkey = "0.8"
