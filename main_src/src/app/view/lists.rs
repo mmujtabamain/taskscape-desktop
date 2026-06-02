@@ -13,12 +13,14 @@ use lucide_icons::Icon;
 
 const PANEL_WIDTH: f32 = 248.0;
 const RAIL_WIDTH: f32 = 58.0;
-/// Square cell size for items in the collapsed rail. Matches the rendered size
-/// of an expanded `t_icon_button` (16px glyph + [10,12] padding + 1px border)
-/// so the rail icons don't change size when the panel expands.
-const RAIL_CELL: f32 = 40.0;
-/// Vertical gap between rail cells.
-const RAIL_GAP: f32 = 6.0;
+/// Fixed height of every sidebar member — the rail cells *and* the panel's
+/// header / new-list / list rows — so toggling collapsed↔expanded causes no
+/// vertical reflow. Sized to comfortably contain the tallest member (the text
+/// input, ≈42px) without clipping. Also the rail cell's width (square).
+const ROW_H: f32 = 42.0;
+const RAIL_CELL: f32 = ROW_H;
+/// Vertical gap between sidebar members, identical in both states.
+const RAIL_GAP: f32 = 8.0;
 
 /// A lucide glyph sized for a rail cell, in the secondary text colour.
 fn rail_glyph(mode: ThemeMode, icon: Icon) -> AppElement<'static> {
@@ -147,38 +149,51 @@ impl Taskscape {
     fn list_panel(&self) -> AppElement<'_> {
         let palette = tokens(self.theme_mode);
 
-        let header = row![
-            t_heading("Lists", 18.0, palette.text_primary),
-            Space::new().width(Length::Fill),
-            t_icon_button(self.theme_mode, Icon::Import, None, Some(Message::ImportList)),
-            t_icon_button(
-                self.theme_mode,
-                Icon::PanelLeftClose,
-                None,
-                Some(Message::ToggleListPanel),
-            ),
-        ]
-        .align_y(Alignment::Center)
-        .spacing(6);
-
-        // "New list" name input + create button.
-        let new_row = row![
-            t_input_box(
-                self.theme_mode,
-                "New list…",
-                &self.new_list_name,
-                Message::NewListNameChanged,
-                Length::Fill,
-                Some(Message::CreateList),
-            ),
-            t_icon_button(self.theme_mode, Icon::Plus, None, Some(Message::CreateList)),
-        ]
-        .spacing(6)
+        // Fixed-height header so it lines up exactly with the rail's first cell.
+        let header = container(
+            row![
+                t_heading("Lists", 18.0, palette.text_primary),
+                Space::new().width(Length::Fill),
+                t_icon_button(self.theme_mode, Icon::Import, None, Some(Message::ImportList)),
+                t_icon_button(
+                    self.theme_mode,
+                    Icon::PanelLeftClose,
+                    None,
+                    Some(Message::ToggleListPanel),
+                ),
+            ]
+            .align_y(Alignment::Center)
+            .spacing(6),
+        )
+        .height(Length::Fixed(ROW_H))
         .align_y(Alignment::Center);
 
-        let rows = self.lists.iter().fold(column![].spacing(5), |col, entry| {
-            col.push(self.list_row(entry))
-        });
+        // "New list" name input + create button — fixed height (matches the
+        // rail's "+" cell position).
+        let new_row = container(
+            row![
+                t_input_box(
+                    self.theme_mode,
+                    "New list…",
+                    &self.new_list_name,
+                    Message::NewListNameChanged,
+                    Length::Fill,
+                    Some(Message::CreateList),
+                ),
+                t_icon_button(self.theme_mode, Icon::Plus, None, Some(Message::CreateList)),
+            ]
+            .spacing(6)
+            .align_y(Alignment::Center),
+        )
+        .height(Length::Fixed(ROW_H))
+        .align_y(Alignment::Center);
+
+        let rows = self
+            .lists
+            .iter()
+            .fold(column![].spacing(RAIL_GAP), |col, entry| {
+                col.push(self.list_row(entry))
+            });
 
         let body: AppElement<'_> = if self.lists.is_empty() {
             container(t_body(
@@ -195,12 +210,12 @@ impl Taskscape {
 
         container(
             column![header, new_row, body]
-                .spacing(10)
+                .spacing(RAIL_GAP)
                 .height(Length::Fill),
         )
         .width(Length::Fixed(PANEL_WIDTH))
         .height(Length::Fill)
-        .padding(10)
+        .padding([10, 10])
         .style(sidebar_container(self.theme_mode))
         .into()
     }
@@ -234,7 +249,9 @@ impl Taskscape {
                 .align_y(Alignment::Center);
 
                 return container(editor)
-                    .padding([5, 6])
+                    .height(Length::Fixed(ROW_H))
+                    .align_y(Alignment::Center)
+                    .padding([0, 6])
                     .style(list_row_container(self.theme_mode, true))
                     .into();
             }
@@ -282,7 +299,9 @@ impl Taskscape {
                 .align_y(Alignment::Center)
                 .spacing(4),
         )
-        .padding([4, 6])
+        .height(Length::Fixed(ROW_H))
+        .align_y(Alignment::Center)
+        .padding([0, 6])
         .style(list_row_container(self.theme_mode, is_current))
         .into()
     }
