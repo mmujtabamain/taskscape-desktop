@@ -1,7 +1,7 @@
 use crate::app::{AppElement, Message, Taskscape};
-use crate::models::Task;
-use crate::thememanager::{empty_state_container, panel_alt_container, tokens};
-use crate::widgets::{t_body, t_heading};
+use common::models::Task;
+use common::thememanager::{empty_state_container, panel_alt_container, tokens};
+use common::widgets::{t_body, t_heading};
 use iced::Alignment;
 use iced::Length;
 use iced::widget::{Space, checkbox, column, container, row, scrollable};

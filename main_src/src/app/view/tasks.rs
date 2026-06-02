@@ -1,6 +1,6 @@
 use crate::app::{AppElement, Message, Taskscape};
-use crate::thememanager::ButtonKind;
-use crate::widgets::{t_button, t_input_box};
+use common::thememanager::ButtonKind;
+use common::widgets::{t_button, t_input_box};
 use iced::Alignment;
 use iced::Length;
 use iced::widget::{column, row};

@@ -1,14 +1,13 @@
-use crate::app::AppElement;
 use crate::thememanager::{ThemeMode, panel_alt_container, tokens};
 use crate::widgets::t_caption;
 use iced::widget::{container, row};
-use iced::{Alignment, Length};
+use iced::{Alignment, Element, Length};
 
-pub fn t_metric_card(
+pub fn t_metric_card<M: 'static>(
     theme_mode: ThemeMode,
     value: String,
     label: &'static str,
-) -> AppElement<'static> {
+) -> Element<'static, M> {
     let palette = tokens(theme_mode);
 
     container(

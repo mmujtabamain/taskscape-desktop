@@ -1,19 +1,18 @@
-use crate::app::{AppElement, Message};
 use crate::thememanager::helpers::with_alpha;
 use crate::thememanager::{ThemeMode, tokens};
 use crate::utils::fonts::poppins_semibold;
 use iced::widget::{Space, column, container, mouse_area, text, text_input};
-use iced::{Border, Color, Length};
+use iced::{Border, Color, Element, Length};
 
 pub const TITLE_INPUT_ID: &str = "title_input";
 
-pub fn t_editable_title<'a>(
+pub fn t_editable_title<'a, M: Clone + 'a>(
     theme_mode: ThemeMode,
     value: &'a str,
     is_editing: bool,
-    on_input: fn(String) -> Message,
-    on_toggle: Message,
-) -> AppElement<'a> {
+    on_input: impl Fn(String) -> M + 'a,
+    on_toggle: M,
+) -> Element<'a, M> {
     let palette = tokens(theme_mode);
 
     let underline_color = if is_editing {
@@ -35,7 +34,7 @@ pub fn t_editable_title<'a>(
         selection: with_alpha(palette.accent, 0.28),
     };
 
-    let content: AppElement<'a> = if is_editing {
+    let content: Element<'a, M> = if is_editing {
         text_input("Untitled", value)
             .id(TITLE_INPUT_ID)
             .font(poppins_semibold())

@@ -1,36 +1,3 @@
-[package]
-name = "Taskscape"
-version = "0.1.0"
-edition = "2024"
-
-[lib]
-name = "taskscape"
-path = "src/lib.rs"
-
-# The main window app and the background tray service are separate processes
-# that share this crate's library code and link to each other over a local
-# Unix socket (see `src/ipc/`).
-[[bin]]
-name = "taskscape"
-path = "src/bin/main.rs"
-
-[[bin]]
-name = "taskscape-tray"
-path = "src/bin/tray.rs"
-
-[dependencies]
-iced = "0.14"
-lucide-icons = { version = "1.14.0", features = ["iced"] }
-csv = "1.3"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-muda = "0.19"
-rfd = "0.15"
-tray-icon = "0.24.0"
-global-hotkey = "0.8"
-
-[target.'cfg(target_os = "macos")'.dependencies]
-# Used to read the main display's backing scale factor so the mini window can
-# be anchored beneath the (physical-pixel) menu bar icon rect in logical points.
-objc2-app-kit = { version = "0.3", features = ["NSScreen"] }
-objc2-foundation = "0.3"
+[workspace]
+resolver = "2"
+members = ["common", "main_src", "tray_src"]

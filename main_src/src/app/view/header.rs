@@ -1,6 +1,6 @@
 use crate::app::{AppElement, Message, Taskscape};
-use crate::thememanager::{panel_alt_container, tokens};
-use crate::widgets::{t_body, t_editable_title, t_icon_button};
+use common::thememanager::{panel_alt_container, tokens};
+use common::widgets::{t_body, t_editable_title, t_icon_button};
 use iced::Alignment;
 use iced::Length;
 use iced::widget::{Space, column, container, row};
@@ -26,7 +26,7 @@ impl Taskscape {
             ),
             t_icon_button(
                 self.theme_mode,
-                if self.theme_mode == crate::thememanager::ThemeMode::Dark {
+                if self.theme_mode == common::thememanager::ThemeMode::Dark {
                     Icon::Sun
                 } else {
                     Icon::Moon

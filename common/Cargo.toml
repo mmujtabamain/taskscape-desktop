@@ -1,0 +1,18 @@
+[package]
+name = "taskscape-common"
+version = "0.1.0"
+edition = "2024"
+
+# Shared, non-executable library: task interfaces/models, the IPC protocol and
+# transport, the theme manager, the generic widget toolkit, and shared utils.
+# Both the `main` and `tray` binary crates depend on this.
+[lib]
+name = "common"
+path = "src/lib.rs"
+
+[dependencies]
+iced = "0.14"
+lucide-icons = { version = "1.14.0", features = ["iced"] }
+csv = "1.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"

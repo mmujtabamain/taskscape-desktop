@@ -1,20 +1,20 @@
 use crate::app::Taskscape;
-use crate::models::Task;
+use common::models::Task;
 
 impl Taskscape {
     pub(crate) fn visible_tasks(&self) -> Vec<(usize, &Task)> {
-        self.tasks.iter().enumerate().collect()
+        self.tasks.enumerated()
     }
 
     pub(crate) fn open_count(&self) -> usize {
-        self.tasks.iter().filter(|task| !task.is_completed()).count()
+        self.tasks.open()
     }
 
     pub(crate) fn completed_count(&self) -> usize {
-        self.tasks.iter().filter(|task| task.is_completed()).count()
+        self.tasks.completed()
     }
 
     pub(crate) fn total_count(&self) -> usize {
-        self.tasks.len()
+        self.tasks.total()
     }
 }

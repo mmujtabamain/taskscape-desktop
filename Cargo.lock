@@ -3,23 +3,6 @@
 version = 4
 
 [[package]]
-name = "Taskscape"
-version = "0.1.0"
-dependencies = [
- "csv",
- "global-hotkey",
- "iced",
- "lucide-icons",
- "muda",
- "objc2-app-kit 0.3.2",
- "objc2-foundation 0.3.2",
- "rfd",
- "serde",
- "serde_json",
- "tray-icon",
-]
-
-[[package]]
 name = "ab_glyph"
 version = "0.2.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3677,6 +3660,43 @@ name = "target-lexicon"
 version = "0.12.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "61c41af27dd6d1e27b1b16b489db798443478cef1f06a660c96db617ba5de3b1"
+
+[[package]]
+name = "taskscape"
+version = "0.1.0"
+dependencies = [
+ "iced",
+ "lucide-icons",
+ "muda",
+ "rfd",
+ "serde",
+ "taskscape-common",
+]
+
+[[package]]
+name = "taskscape-common"
+version = "0.1.0"
+dependencies = [
+ "csv",
+ "iced",
+ "lucide-icons",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "taskscape-tray"
+version = "0.1.0"
+dependencies = [
+ "global-hotkey",
+ "iced",
+ "lucide-icons",
+ "objc2-app-kit 0.3.2",
+ "objc2-foundation 0.3.2",
+ "serde",
+ "taskscape-common",
+ "tray-icon",
+]
 
 [[package]]
 name = "tempfile"

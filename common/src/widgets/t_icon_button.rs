@@ -1,16 +1,16 @@
-use crate::app::{AppElement, Message};
 use crate::thememanager::{ButtonKind, ThemeMode, button_style, tokens};
 use crate::widgets::{t_body, lucide_icon};
 use iced::Alignment;
+use iced::Element;
 use iced::widget::{button, row};
 use lucide_icons::Icon;
 
-pub fn t_icon_button(
+pub fn t_icon_button<M: Clone + 'static>(
     theme_mode: ThemeMode,
     symbol: Icon,
     count: Option<u32>,
-    message: Option<Message>,
-) -> AppElement<'static> {
+    message: Option<M>,
+) -> Element<'static, M> {
     let palette = tokens(theme_mode);
     let content = if let Some(value) = count {
         row![

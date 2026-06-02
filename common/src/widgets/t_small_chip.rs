@@ -1,9 +1,9 @@
-use crate::app::AppElement;
 use crate::thememanager::{ThemeMode, tokens};
 use crate::widgets::t_caption;
+use iced::Element;
 use iced::widget::container;
 
-pub fn t_small_chip<'a>(theme_mode: ThemeMode, label: &'a str, accent: bool) -> AppElement<'a> {
+pub fn t_small_chip<'a, M: 'a>(theme_mode: ThemeMode, label: &'a str, accent: bool) -> Element<'a, M> {
     let palette = tokens(theme_mode);
     let style = if accent {
         iced::widget::container::Style::default()

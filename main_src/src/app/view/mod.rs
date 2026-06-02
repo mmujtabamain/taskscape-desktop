@@ -1,11 +1,10 @@
-pub mod header;
-pub mod mini;
-pub mod tasks;
-pub mod workspace;
+mod header;
+mod tasks;
+mod workspace;
 
 use crate::app::{AppElement, Message, Taskscape};
-use crate::thememanager::{panel_alt_container, shell_container, tokens};
-use crate::widgets::{t_body, t_caption};
+use common::thememanager::{panel_alt_container, shell_container, tokens};
+use common::widgets::{t_body, t_caption};
 use iced::widget::{column, container, mouse_area, row};
 use iced::{Alignment, Length};
 

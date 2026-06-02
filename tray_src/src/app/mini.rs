@@ -2,18 +2,26 @@
 //!
 //! It has no title bar (see `mini_window_settings`) and a deliberately small
 //! surface: an add-a-task row and a scrollable list where each task can be
-//! toggled complete or removed. It shares `tasks` with the main window, so any
-//! change here is reflected there immediately.
+//! toggled complete or removed. While linked, changes here are mirrored to the
+//! main app over IPC.
 
-use crate::app::{AppElement, Message, Taskscape};
-use crate::models::Task;
-use crate::thememanager::{ButtonKind, mini_shell_container, panel_alt_container, tokens};
-use crate::widgets::{t_body, t_button, t_heading, t_icon_button, t_input_box};
+use crate::app::{AppElement, Message, TrayApp};
+use common::models::Task;
+use common::thememanager::{ButtonKind, mini_shell_container, panel_alt_container, tokens};
+use common::widgets::{t_body, t_button, t_heading, t_icon_button, t_input_box};
 use iced::widget::{Space, checkbox, column, container, row, scrollable};
 use iced::{Alignment, Length};
 use lucide_icons::Icon;
 
-impl Taskscape {
+impl TrayApp {
+    fn total_count(&self) -> usize {
+        self.tasks.total()
+    }
+
+    fn visible_tasks(&self) -> Vec<(usize, &Task)> {
+        self.tasks.enumerated()
+    }
+
     pub(crate) fn mini_view(&self) -> AppElement<'_> {
         let palette = tokens(self.theme_mode);
 

@@ -1,19 +1,18 @@
 use crate::app::snapshot::AppSnapshot;
 use crate::app::{AppTask, Message, Taskscape};
-use crate::models::Task as TaskItem;
-use crate::utils::persistence::{load_todos_from_path, save_todos_to_path};
+use common::utils::persistence::{load_todos_from_path, save_todos_to_path};
 use iced::Task;
 use std::path::PathBuf;
 
 impl Taskscape {
     pub(crate) fn snapshot(&self) -> AppSnapshot {
         AppSnapshot {
-            tasks: self.tasks.clone(),
+            tasks: self.tasks.to_vec(),
         }
     }
 
     pub(crate) fn restore_snapshot(&mut self, snapshot: AppSnapshot) {
-        self.tasks = snapshot.tasks;
+        self.tasks.replace(snapshot.tasks);
     }
 
     pub(crate) fn push_history(&mut self) {
@@ -22,58 +21,54 @@ impl Taskscape {
     }
 
     /// Adds the task currently in the composer input. Returns the added title so
-    /// the caller can mirror it to the linked peer over IPC, or `None` if the
+    /// the caller can mirror it to the tray service over IPC, or `None` if the
     /// input was empty (nothing added).
     pub(crate) fn add_task(&mut self) -> Option<String> {
         let title = self.title_input.trim().to_owned();
-
         if title.is_empty() {
             return None;
         }
 
         self.push_history();
-
-        self.tasks.push(TaskItem::new(title.clone()));
+        let added = self.tasks.add(title);
 
         self.title_input.clear();
-        self.due_date_input.clear();
         self.status_message = String::from("Task added.");
-        Some(title)
+        added
     }
 
-    /// Appends a task with an explicit title (used when applying a peer's add over
-    /// IPC, where there is no composer input to read).
+    /// Appends a task with an explicit title (used when applying the tray
+    /// service's add over IPC).
     pub(crate) fn add_task_with_title(&mut self, title: String) {
         if title.trim().is_empty() {
             return;
         }
         self.push_history();
-        self.tasks.push(TaskItem::new(title));
+        self.tasks.add(title);
         self.status_message = String::from("Task added.");
     }
 
     pub(crate) fn remove_task(&mut self, index: usize) {
-        if index >= self.tasks.len() {
-            return;
-        }
-
         self.push_history();
-        self.tasks.remove(index);
-        self.status_message = String::from("Task removed.");
+        if self.tasks.remove(index) {
+            self.status_message = String::from("Task removed.");
+        } else {
+            // Nothing removed: drop the no-op history entry we just pushed.
+            self.undo_stack.pop();
+        }
     }
 
     pub(crate) fn toggle_task_completed(&mut self, index: usize, completed: bool) {
-        if index >= self.tasks.len() {
-            return;
-        }
-
         self.push_history();
-        self.tasks[index].completed = completed;
-        self.status_message = if completed {
-            String::from("Task marked complete.")
+        if self.tasks.set_completed(index, completed) {
+            self.status_message = if completed {
+                String::from("Task marked complete.")
+            } else {
+                String::from("Task marked open.")
+            };
         } else {
-            String::from("Task marked open.")
-        };
+            self.undo_stack.pop();
+        }
     }
 
     pub(crate) fn undo(&mut self) {
@@ -100,7 +95,6 @@ impl Taskscape {
     }
 
     /// Opens the native Save dialog asynchronously (non-blocking).
-    /// Result arrives as Message::FileSaveResult.
     pub(crate) fn launch_save_dialog(&self) -> AppTask {
         let file_name = format!("{}.csv", self.file_name);
         Task::perform(
@@ -118,7 +112,6 @@ impl Taskscape {
     }
 
     /// Opens the native Open dialog asynchronously (non-blocking).
-    /// Result arrives as Message::FileLoadResult.
     pub(crate) fn launch_load_dialog() -> AppTask {
         Task::perform(
             async {
@@ -135,7 +128,7 @@ impl Taskscape {
 
     /// Persists tasks to path after the save dialog resolves.
     pub(crate) fn complete_save(&mut self, path: PathBuf) {
-        self.status_message = match save_todos_to_path(&self.tasks, &path) {
+        self.status_message = match save_todos_to_path(self.tasks.tasks(), &path) {
             Ok(msg) => {
                 self.undo_stack.clear();
                 self.redo_stack.clear();
@@ -152,7 +145,7 @@ impl Taskscape {
                 self.undo_stack.clear();
                 self.redo_stack.clear();
                 let count = tasks.len();
-                self.tasks = tasks;
+                self.tasks.replace(tasks);
                 if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
                     self.file_name = stem.to_owned();
                 }
