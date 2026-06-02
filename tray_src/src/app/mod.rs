@@ -54,6 +54,10 @@ pub struct TrayApp {
     pub(crate) mini_window_id: Option<window::Id>,
     /// The small "Quit Taskscape?" confirmation popover window, when open.
     pub(crate) confirm_window_id: Option<window::Id>,
+    /// Whether the confirm popover has gained focus yet — we only auto-close it on
+    /// *losing* focus after it has been focused, to avoid the transient unfocus
+    /// during open from closing it instantly.
+    pub(crate) confirm_focused: bool,
     pub(crate) theme_mode: ThemeMode,
     pub(crate) title_input: String,
     pub(crate) status_message: String,
@@ -77,6 +81,7 @@ impl Default for TrayApp {
             bootstrap_window_id: None,
             mini_window_id: None,
             confirm_window_id: None,
+            confirm_focused: false,
             theme_mode: ThemeMode::Dark,
             title_input: String::new(),
             status_message: String::from("Ready."),

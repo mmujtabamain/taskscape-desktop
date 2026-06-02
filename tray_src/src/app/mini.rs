@@ -108,7 +108,10 @@ impl TrayApp {
                 .iter()
                 .fold(column![].spacing(5), |col, (index, task)| {
                     col.push(self.mini_task_row(*index, task))
-                });
+                })
+                // Reserve a gutter on the right so the scrollbar doesn't overlap
+                // the rows' trash buttons.
+                .padding(iced::Padding::ZERO.right(10.0));
             scrollable(list).height(Length::Fill).into()
         };
 

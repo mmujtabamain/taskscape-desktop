@@ -2,8 +2,7 @@
 //!
 //! Uses the `global-hotkey` crate (same maintainer/event model as `tray-icon`)
 //! to register a system-wide hotkey that fires even when Taskscape is not the
-//! focused application. The default binding is Cmd+` on macOS and Ctrl+`
-//! elsewhere.
+//! focused application. The binding is Option/Alt+` on every platform.
 //!
 //! This mirrors `tray.rs`: the manager must be kept alive for the hotkey to stay
 //! registered, so we stash it in thread-local storage, and a subscription
@@ -15,7 +14,7 @@ use iced::futures::sink::SinkExt;
 
 use global_hotkey::{
     GlobalHotKeyEvent, GlobalHotKeyManager, HotKeyState,
-    hotkey::{CMD_OR_CTRL, Code, HotKey},
+    hotkey::{Code, HotKey, Modifiers},
 };
 use std::cell::{Cell, RefCell};
 
@@ -26,9 +25,9 @@ pub enum HotkeyCommand {
     ToggleMini,
 }
 
-/// The default mini-window toggle: Cmd+` (macOS) / Ctrl+` (Windows & Linux).
+/// The mini-window toggle: Option/Alt+` (the backtick / `~` key).
 fn mini_toggle_hotkey() -> HotKey {
-    HotKey::new(Some(CMD_OR_CTRL), Code::Backquote)
+    HotKey::new(Some(Modifiers::ALT), Code::Backquote)
 }
 
 thread_local! {

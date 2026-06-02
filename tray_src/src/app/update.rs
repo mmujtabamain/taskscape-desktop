@@ -73,6 +73,7 @@ impl TrayApp {
                     self.mini_window_id = None;
                 } else if self.confirm_window_id == Some(window_id) {
                     self.confirm_window_id = None;
+                    self.confirm_focused = false;
                 } else if self.bootstrap_window_id == Some(window_id) {
                     self.bootstrap_window_id = None;
                 }
@@ -89,13 +90,20 @@ impl TrayApp {
                 }
             }
             Message::WindowEvent(id, event) => {
-                // Dismiss the quit popover as soon as it loses focus, like a
-                // native popover.
-                if matches!(event, window::Event::Unfocused)
-                    && self.confirm_window_id == Some(id)
-                {
-                    self.confirm_window_id = None;
-                    return window::close(id);
+                if self.confirm_window_id == Some(id) {
+                    match event {
+                        // Mark focused once it actually becomes key.
+                        window::Event::Focused => self.confirm_focused = true,
+                        // Dismiss like a native popover — but only after it has
+                        // been focused, so the transient unfocus during open
+                        // doesn't close it instantly.
+                        window::Event::Unfocused if self.confirm_focused => {
+                            self.confirm_window_id = None;
+                            self.confirm_focused = false;
+                            return window::close(id);
+                        }
+                        _ => {}
+                    }
                 }
             }
             Message::TrayEvent(command) => match command {
@@ -118,6 +126,7 @@ impl TrayApp {
             Message::QuitRequested => return self.open_quit_confirm(),
             Message::ConfirmQuit => return self.quit(),
             Message::CancelQuit => {
+                self.confirm_focused = false;
                 if let Some(id) = self.confirm_window_id.take() {
                     return window::close(id);
                 }
@@ -175,6 +184,7 @@ impl TrayApp {
         }
         let (id, open) = window::open(Self::confirm_window_settings());
         self.confirm_window_id = Some(id);
+        self.confirm_focused = false;
         Task::batch([open.map(Message::WindowOpened), window::gain_focus(id)])
     }
 
