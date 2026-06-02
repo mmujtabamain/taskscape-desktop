@@ -1,6 +1,16 @@
 use crate::app::{AppTask, Message, Taskscape};
 use iced::{Task, keyboard, window};
 
+/// The menu bar icon's screen rect (top-left + size, in physical pixels), used
+/// to anchor the mini window beneath the icon when it is opened from the tray.
+#[derive(Debug, Clone, Copy)]
+struct TrayAnchor {
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+}
+
 impl Taskscape {
     pub(crate) fn update(&mut self, message: Message) -> AppTask {
         match message {
@@ -137,8 +147,22 @@ impl Taskscape {
             Message::TrayEvent(command) => {
                 use crate::app::tray::TrayCommand;
                 match command {
-                    // Clicking the menu bar icon toggles the compact mini window.
-                    TrayCommand::ShowWindow => return self.toggle_mini_window(),
+                    // Clicking the menu bar icon toggles the compact mini window,
+                    // anchored just beneath the icon.
+                    TrayCommand::ShowWindow {
+                        icon_x,
+                        icon_y,
+                        icon_width,
+                        icon_height,
+                    } => {
+                        let anchor = TrayAnchor {
+                            x: icon_x,
+                            y: icon_y,
+                            width: icon_width,
+                            height: icon_height,
+                        };
+                        return self.toggle_mini_window(Some(anchor));
+                    }
                 }
             }
             Message::TrayInstalled(result) => {
@@ -151,7 +175,7 @@ impl Taskscape {
                 match command {
                     // Global Cmd/Ctrl+` toggles the mini window, even when
                     // Taskscape is not the focused application.
-                    HotkeyCommand::ToggleMini => return self.toggle_mini_window(),
+                    HotkeyCommand::ToggleMini => return self.toggle_mini_window(None),
                 }
             }
             Message::HotkeyInstalled(result) => {
@@ -197,16 +221,51 @@ impl Taskscape {
 
     /// Toggles the compact mini window: open + focus it if hidden, close it if
     /// already showing. Shared by the menu bar icon and the keyboard shortcut.
-    fn toggle_mini_window(&mut self) -> AppTask {
+    ///
+    /// When `anchor` is given (a tray-icon click), the window opens just beneath
+    /// the icon; otherwise (the keyboard shortcut) it falls back to centered.
+    fn toggle_mini_window(&mut self, anchor: Option<TrayAnchor>) -> AppTask {
         if let Some(id) = self.mini_window_id.take() {
             self.status_message = String::from("Mini window closed.");
             return window::close(id);
         }
 
-        let (id, open) = window::open(Self::mini_window_settings());
+        let mut settings = Self::mini_window_settings();
+        if let Some(anchor) = anchor {
+            settings.position = Self::mini_window_position(&anchor, settings.size);
+        }
+
+        let (id, open) = window::open(settings);
         self.mini_window_id = Some(id);
         self.status_message = String::from("Mini window opened.");
         Task::batch([open.map(Message::WindowOpened), window::gain_focus(id)])
+    }
+
+    /// Computes a window position (in logical points) that horizontally centers
+    /// the mini window under the menu bar icon and tucks it just below the menu
+    /// bar, converting the icon's physical-pixel rect via the display scale.
+    fn mini_window_position(anchor: &TrayAnchor, window_size: iced::Size) -> window::Position {
+        // Gap between the menu bar and the window's top edge, in logical points.
+        const GAP: f32 = 6.0;
+
+        let scale = crate::app::tray::main_screen_scale().max(1.0);
+
+        // Center of the icon, and its bottom edge, in logical points.
+        let icon_center_x = (anchor.x + anchor.width / 2.0) / scale;
+        let icon_bottom_y = (anchor.y + anchor.height) / scale;
+
+        let mut x = icon_center_x as f32 - window_size.width / 2.0;
+        let y = icon_bottom_y as f32 + GAP;
+
+        // Keep the window fully on screen: clamp against the visible width of the
+        // display the icon lives on (its logical width is x-of-right-edge ≈ the
+        // monitor width). We don't have the monitor bounds here, so only guard
+        // the left edge; iced clamps the right edge against the monitor.
+        if x < GAP {
+            x = GAP;
+        }
+
+        window::Position::Specific(iced::Point::new(x, y))
     }
 
     /// Platform-specific window management shortcuts

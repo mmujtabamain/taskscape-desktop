@@ -13,6 +13,20 @@ pub fn shell_container(mode: ThemeMode) -> impl Fn(&Theme) -> container::Style +
     }
 }
 
+/// Like [`shell_container`], but with rounded corners and a hairline border for
+/// the borderless, transparent mini window. The window must be opened with
+/// `transparent: true` so the corners outside this radius stay see-through.
+pub fn mini_shell_container(mode: ThemeMode) -> impl Fn(&Theme) -> container::Style + Clone {
+    move |_theme: &Theme| {
+        let palette = tokens(mode);
+
+        container::Style::default()
+            .color(palette.text_primary)
+            .background(background_gradient(mode))
+            .border(border(16.0, 1.0, with_alpha(palette.border_strong, 0.6)))
+    }
+}
+
 pub fn panel_alt_container(mode: ThemeMode) -> impl Fn(&Theme) -> container::Style + Clone {
     move |_theme: &Theme| {
         let palette = tokens(mode);

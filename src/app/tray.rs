@@ -23,8 +23,18 @@ use tray_icon::{
 /// Commands produced by interacting with the menu bar icon.
 #[derive(Debug, Clone, Copy)]
 pub enum TrayCommand {
-    /// Bring the main window to the foreground.
-    ShowWindow,
+    /// Bring the main window to the foreground. Carries the icon's screen rect
+    /// (in physical pixels) so the mini window can be anchored beneath it.
+    ShowWindow {
+        /// Top-left x of the menu bar icon, in physical pixels.
+        icon_x: f64,
+        /// Top-left y of the menu bar icon, in physical pixels.
+        icon_y: f64,
+        /// Width of the menu bar icon, in physical pixels.
+        icon_width: f64,
+        /// Height of the menu bar icon, in physical pixels.
+        icon_height: f64,
+    },
 }
 
 #[cfg(target_os = "macos")]
@@ -54,6 +64,28 @@ pub fn install() -> Result<(), String> {
     TRAY_HANDLE.with(|slot| *slot.borrow_mut() = Some(tray));
     TRAY_INSTALLED.with(|flag| flag.set(true));
     Ok(())
+}
+
+/// The main display's backing scale factor (2.0 on Retina, 1.0 otherwise).
+///
+/// The menu bar icon rect from `tray-icon` is in physical pixels, but iced
+/// positions windows in logical points; dividing by this converts between them.
+#[cfg(target_os = "macos")]
+pub fn main_screen_scale() -> f64 {
+    use objc2_app_kit::NSScreen;
+    use objc2_foundation::MainThreadMarker;
+
+    // Must run on the main thread; the tray handler does.
+    MainThreadMarker::new()
+        .and_then(NSScreen::mainScreen)
+        .map(|screen| screen.backingScaleFactor() as f64)
+        .filter(|s| *s > 0.0)
+        .unwrap_or(1.0)
+}
+
+#[cfg(not(target_os = "macos"))]
+pub fn main_screen_scale() -> f64 {
+    1.0
 }
 
 #[cfg(not(target_os = "macos"))]
@@ -110,8 +142,14 @@ fn map_event_to_command(event: &TrayIconEvent) -> Option<TrayCommand> {
         TrayIconEvent::Click {
             button: MouseButton::Left,
             button_state: MouseButtonState::Up,
+            rect,
             ..
-        } => Some(TrayCommand::ShowWindow),
+        } => Some(TrayCommand::ShowWindow {
+            icon_x: rect.position.x,
+            icon_y: rect.position.y,
+            icon_width: rect.size.width as f64,
+            icon_height: rect.size.height as f64,
+        }),
         _ => None,
     }
 }

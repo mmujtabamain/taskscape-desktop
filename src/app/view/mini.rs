@@ -7,7 +7,7 @@
 
 use crate::app::{AppElement, Message, Taskscape};
 use crate::models::Task;
-use crate::thememanager::{ButtonKind, panel_alt_container, shell_container, tokens};
+use crate::thememanager::{ButtonKind, mini_shell_container, panel_alt_container, tokens};
 use crate::widgets::{t_body, t_button, t_heading, t_icon_button, t_input_box};
 use iced::widget::{Space, checkbox, column, container, row, scrollable};
 use iced::{Alignment, Length};
@@ -57,7 +57,7 @@ impl Taskscape {
             .width(Length::Fill)
             .height(Length::Fill)
             .padding(12)
-            .style(shell_container(self.theme_mode))
+            .style(mini_shell_container(self.theme_mode))
             .into()
     }
 

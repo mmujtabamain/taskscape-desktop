@@ -72,6 +72,9 @@ impl Taskscape {
             max_size: Some(Size::new(360.0, 900.0)),
             decorations: false,
             resizable: false,
+            // Transparent so the rounded corners drawn by `mini_shell_container`
+            // show through instead of sitting on an opaque rectangle.
+            transparent: true,
             level: window::Level::AlwaysOnTop,
             position: window::Position::Centered,
             exit_on_close_request: false,
