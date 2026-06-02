@@ -184,8 +184,8 @@ fn build_menu() -> muda::Result<Menu> {
     }
 
     let file_new = MenuItem::with_id(ID_FILE_NEW, "New List", true, None);
-    let file_save = MenuItem::with_id(ID_FILE_SAVE, "Save CSV…", true, None);
-    let file_load = MenuItem::with_id(ID_FILE_LOAD, "Load CSV…", true, None);
+    let file_save = MenuItem::with_id(ID_FILE_SAVE, "Export List…", true, None);
+    let file_load = MenuItem::with_id(ID_FILE_LOAD, "Import List…", true, None);
 
     let edit_undo = MenuItem::with_id(ID_EDIT_UNDO, "Undo", true, None);
     let edit_redo = MenuItem::with_id(ID_EDIT_REDO, "Redo", true, None);

@@ -9,6 +9,7 @@
 
 pub mod ipc;
 pub mod models;
+pub mod storage;
 pub mod tasklist;
 pub mod thememanager;
 pub mod utils;

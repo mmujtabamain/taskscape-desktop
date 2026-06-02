@@ -1,6 +1,6 @@
 use crate::app::{AppElement, Message, Taskscape};
-use common::thememanager::{panel_alt_container, tokens};
-use common::widgets::{t_body, t_editable_title, t_icon_button};
+use common::thememanager::{ThemeMode, panel_alt_container, tokens};
+use common::widgets::{t_body, t_heading, t_icon_button};
 use iced::Alignment;
 use iced::Length;
 use iced::widget::{Space, column, container, row};
@@ -10,23 +10,20 @@ impl Taskscape {
     pub(crate) fn header(&self) -> AppElement<'_> {
         let palette = tokens(self.theme_mode);
 
+        let list_name = self.current_list.as_deref().unwrap_or("No list open");
+
         let controls = row![
             t_icon_button(
                 self.theme_mode,
-                Icon::FilePlus,
+                Icon::PanelLeft,
                 None,
-                Some(Message::FileNew),
+                Some(Message::ToggleListPanel),
             ),
-            t_icon_button(self.theme_mode, Icon::Save, None, Some(Message::FileSave),),
+            t_icon_button(self.theme_mode, Icon::Import, None, Some(Message::ImportList)),
+            t_icon_button(self.theme_mode, Icon::Upload, None, Some(Message::ExportList)),
             t_icon_button(
                 self.theme_mode,
-                Icon::FolderOpen,
-                None,
-                Some(Message::FileLoad),
-            ),
-            t_icon_button(
-                self.theme_mode,
-                if self.theme_mode == common::thememanager::ThemeMode::Dark {
+                if self.theme_mode == ThemeMode::Dark {
                     Icon::Sun
                 } else {
                     Icon::Moon
@@ -54,13 +51,7 @@ impl Taskscape {
             row![
                 {
                     let title_section = column![
-                        t_editable_title(
-                            self.theme_mode,
-                            &self.file_name_editing,
-                            self.editing_title,
-                            Message::FileNameChanged,
-                            Message::ToggleTitleEdit,
-                        ),
+                        t_heading(list_name, 40.0, palette.text_primary),
                         t_body(
                             format!("{} tasks in this list.", self.total_count()),
                             15.0,

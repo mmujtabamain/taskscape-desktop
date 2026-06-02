@@ -17,6 +17,17 @@ impl Taskscape {
         ipc::client::send(&message);
     }
 
+    /// Pushes the whole current task list to the tray service so the mini window
+    /// follows a list switch. No-op when not linked.
+    pub(crate) fn resync_tray(&self) {
+        if !self.ipc_connected {
+            return;
+        }
+        ipc::client::send(&IpcMessage::Hello {
+            tasks: self.tasks.to_vec(),
+        });
+    }
+
     /// Handles an inbound link event. Returns any follow-up task.
     pub(crate) fn handle_ipc(&mut self, event: IpcInbound) -> AppTask {
         match event {

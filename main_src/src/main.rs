@@ -7,5 +7,8 @@
 mod app;
 
 fn main() -> iced::Result {
+    // Start the background tray service if it isn't already running, so the user
+    // only ever launches this one app.
+    app::ensure_tray_running();
     app::run()
 }

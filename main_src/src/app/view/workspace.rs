@@ -1,7 +1,7 @@
 use crate::app::{AppElement, Message, Taskscape};
 use common::models::Task;
 use common::thememanager::{empty_state_container, panel_alt_container, tokens};
-use common::widgets::{t_body, t_heading};
+use common::widgets::{t_body, t_heading, t_icon_button};
 use iced::Alignment;
 use iced::Length;
 use iced::widget::{Space, checkbox, column, container, row, scrollable};
@@ -66,7 +66,13 @@ impl Taskscape {
                         )
                     ]
                     .spacing(4),
-                    Space::new().width(Length::Fill)
+                    Space::new().width(Length::Fill),
+                    t_icon_button(
+                        self.theme_mode,
+                        lucide_icons::Icon::Trash2,
+                        None,
+                        Some(Message::RemoveTask(index)),
+                    ),
                 ]
                 .align_y(Alignment::Center)
                 .spacing(12),

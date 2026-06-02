@@ -12,25 +12,6 @@ impl Taskscape {
                 self.status_message = format!("Switched to {}.", self.theme_mode.label());
             }
             Message::TitleChanged(value) => self.title_input = value,
-            Message::FileNameChanged(value) => self.file_name_editing = value,
-            Message::ToggleTitleEdit => {
-                if self.editing_title {
-                    self.file_name = self.file_name_editing.clone();
-                }
-                self.editing_title = !self.editing_title;
-                if self.editing_title {
-                    self.file_name_editing = self.file_name.clone();
-                    return iced::widget::operation::move_cursor_to_end(
-                        common::widgets::t_editable_title::TITLE_INPUT_ID,
-                    );
-                }
-            }
-            Message::CancelAllEditing => {
-                if self.editing_title {
-                    self.file_name_editing = self.file_name.clone();
-                    self.editing_title = false;
-                }
-            }
             Message::ToggleTaskCompleted(index, completed) => {
                 self.toggle_task_completed(index, completed);
                 self.broadcast(IpcMessage::ToggleTaskCompleted { index, completed });
@@ -40,29 +21,64 @@ impl Taskscape {
                     self.broadcast(IpcMessage::AddTask { title });
                 }
             }
+            Message::RemoveTask(index) => {
+                self.remove_task(index);
+                self.broadcast(IpcMessage::RemoveTask { index });
+            }
             Message::ClearCompleted => {
-                self.push_history();
-                self.tasks.clear_completed();
-                self.status_message = String::from("Completed tasks removed.");
+                self.clear_completed();
+                self.resync_tray();
             }
             Message::ClearAll => {
-                self.push_history();
-                self.tasks.clear();
-                self.status_message = String::from("All tasks removed.");
+                self.clear_all();
+                self.resync_tray();
             }
-            Message::FileNew => self.new_list("Started a new list."),
-            Message::FileSave => return self.launch_save_dialog(),
-            Message::FileLoad => return Self::launch_load_dialog(),
-            Message::FileSaveResult(Some(path)) => self.complete_save(path),
-            Message::FileSaveResult(None) => {
-                self.status_message = String::from("Save cancelled.");
+            Message::EditUndo => {
+                self.undo();
+                self.resync_tray();
             }
-            Message::FileLoadResult(Some(path)) => self.complete_load(path),
-            Message::FileLoadResult(None) => {
-                self.status_message = String::from("Load cancelled.");
+            Message::EditRedo => {
+                self.redo();
+                self.resync_tray();
             }
-            Message::EditUndo => self.undo(),
-            Message::EditRedo => self.redo(),
+            // --- List management ---
+            Message::ToggleListPanel => self.show_list_panel = !self.show_list_panel,
+            Message::OpenList(name) => {
+                self.open_list(&name);
+                self.resync_tray();
+            }
+            Message::NewListNameChanged(value) => self.new_list_name = value,
+            Message::CreateList => {
+                self.create_list();
+                self.resync_tray();
+            }
+            Message::DeleteList(name) => {
+                self.delete_list(&name);
+                self.resync_tray();
+            }
+            Message::StartRenameList(name) => {
+                self.renaming = Some((name.clone(), name));
+            }
+            Message::RenameInputChanged(value) => {
+                if let Some((_, new_name)) = self.renaming.as_mut() {
+                    *new_name = value;
+                }
+            }
+            Message::CommitRenameList => self.commit_rename(),
+            Message::CancelRenameList => self.renaming = None,
+            Message::ImportList => return Self::launch_import_dialog(),
+            Message::ImportListResult(Some(path)) => {
+                self.complete_import(path);
+                self.resync_tray();
+            }
+            Message::ImportListResult(None) => {
+                self.status_message = String::from("Import cancelled.");
+            }
+            Message::ExportList => return self.launch_export_dialog(),
+            Message::ExportListResult(Some(path)) => self.complete_export(path),
+            Message::ExportListResult(None) => {
+                self.status_message = String::from("Export cancelled.");
+            }
             Message::WindowOpened(window_id) => {
                 self.window_id = Some(window_id);
                 // The native menu must be installed on the UI thread; window::run
@@ -78,11 +94,18 @@ impl Taskscape {
                 }
             }
             Message::NativeMenuEvent(command) => match command {
-                NativeMenuCommand::FileNew => self.new_list("Started a new list."),
-                NativeMenuCommand::FileSave => return self.launch_save_dialog(),
-                NativeMenuCommand::FileLoad => return Self::launch_load_dialog(),
-                NativeMenuCommand::EditUndo => self.undo(),
-                NativeMenuCommand::EditRedo => self.redo(),
+                // "New List" opens the sidebar so the user can name + create one.
+                NativeMenuCommand::FileNew => self.show_list_panel = true,
+                NativeMenuCommand::FileSave => return self.launch_export_dialog(),
+                NativeMenuCommand::FileLoad => return Self::launch_import_dialog(),
+                NativeMenuCommand::EditUndo => {
+                    self.undo();
+                    self.resync_tray();
+                }
+                NativeMenuCommand::EditRedo => {
+                    self.redo();
+                    self.resync_tray();
+                }
                 NativeMenuCommand::ToggleTheme => {
                     self.theme_mode = self.theme_mode.toggled();
                     self.status_message = format!("Switched to {}.", self.theme_mode.label());
@@ -116,19 +139,29 @@ impl Taskscape {
                     let command = modifiers.command();
 
                     match key.as_ref() {
-                        Key::Character("z") if command && modifiers.shift() => self.redo(),
-                        Key::Character("z") if command => self.undo(),
-                        Key::Character("s") if command => return self.launch_save_dialog(),
-                        Key::Character("o") if command => return Self::launch_load_dialog(),
-                        Key::Character("n") if command => self.new_list("Started a new list."),
+                        Key::Character("z") if command && modifiers.shift() => {
+                            self.redo();
+                            self.resync_tray();
+                        }
+                        Key::Character("z") if command => {
+                            self.undo();
+                            self.resync_tray();
+                        }
+                        Key::Character("e") if command => return self.launch_export_dialog(),
+                        Key::Character("o") if command => return Self::launch_import_dialog(),
+                        Key::Character("n") if command => self.show_list_panel = true,
+                        Key::Character("l") if command => {
+                            self.show_list_panel = !self.show_list_panel;
+                        }
                         Key::Character("t") if command => {
                             self.theme_mode = self.theme_mode.toggled();
                             self.status_message =
                                 format!("Switched to {}.", self.theme_mode.label());
                         }
-                        Key::Named(iced::keyboard::key::Named::Escape) if self.editing_title => {
-                            self.file_name_editing = self.file_name.clone();
-                            self.editing_title = false;
+                        Key::Named(iced::keyboard::key::Named::Escape)
+                            if self.renaming.is_some() =>
+                        {
+                            self.renaming = None;
                         }
                         _ => {}
                     }

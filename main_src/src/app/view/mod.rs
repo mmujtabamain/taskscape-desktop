@@ -1,33 +1,47 @@
 mod header;
+mod lists;
 mod tasks;
 mod workspace;
 
-use crate::app::{AppElement, Message, Taskscape};
+use crate::app::{AppElement, Taskscape};
 use common::thememanager::{panel_alt_container, shell_container, tokens};
 use common::widgets::{t_body, t_caption};
-use iced::widget::{column, container, mouse_area, row};
+use iced::widget::{column, container, row};
 use iced::{Alignment, Length};
 
 impl Taskscape {
     pub(crate) fn view_root(&self) -> AppElement<'_> {
-        let content = container(
-            column![self.tasks_view(), self.status_bar()]
-                .width(Length::Fill)
-                .height(Length::Fill)
-                .spacing(14)
-                .padding(14),
-        )
-        .width(Length::Fill)
-        .height(Length::Fill)
-        .style(shell_container(self.theme_mode));
+        // The main column is either the task workspace (a list is open) or the
+        // create/load empty-state prompt (none open).
+        let main_column = column![self.workspace_or_prompt(), self.status_bar()]
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .spacing(14)
+            .padding(14);
 
-        // If any editing is active, wrap with mouse_area to detect clicks outside
-        if self.is_any_editing() {
-            mouse_area(content)
-                .on_press(Message::CancelAllEditing)
+        // Optionally show the list sidebar to the left of the main column.
+        let body: AppElement<'_> = if self.show_list_panel {
+            row![self.list_panel(), main_column]
+                .spacing(0)
+                .height(Length::Fill)
                 .into()
         } else {
-            content.into()
+            main_column.into()
+        };
+
+        container(body)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .style(shell_container(self.theme_mode))
+            .into()
+    }
+
+    /// The task workspace when a list is open, else the empty-state prompt.
+    fn workspace_or_prompt(&self) -> AppElement<'_> {
+        if self.current_list.is_some() {
+            self.tasks_view()
+        } else {
+            self.empty_state_prompt()
         }
     }
 

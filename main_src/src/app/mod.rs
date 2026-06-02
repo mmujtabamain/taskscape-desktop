@@ -1,6 +1,7 @@
 //! The main-window application: state, message types, and the iced wiring.
 
 mod actions;
+mod launch;
 mod native_menu;
 mod queries;
 mod snapshot;
@@ -8,11 +9,14 @@ mod sync;
 mod update;
 mod view;
 
+use common::storage::ListEntry;
 use common::tasklist::TaskList;
 use common::thememanager::{ThemeMode, app_theme};
 use common::utils::fonts;
 use iced::{Settings, Subscription, Theme, Size, daemon, keyboard, window};
 use std::path::PathBuf;
+
+pub use launch::ensure_tray_running;
 
 pub type AppElement<'a> = iced::Element<'a, Message>;
 pub type AppTask = iced::Task<Message>;
@@ -22,20 +26,39 @@ pub enum Message {
     FontLoaded,
     ToggleTheme,
     TitleChanged(String),
-    FileNameChanged(String),
-    ToggleTitleEdit,
-    CancelAllEditing,
     ToggleTaskCompleted(usize, bool),
+    RemoveTask(usize),
     AddTask,
     ClearCompleted,
     ClearAll,
-    FileNew,
-    FileSave,
-    FileLoad,
-    FileSaveResult(Option<PathBuf>),
-    FileLoadResult(Option<PathBuf>),
     EditUndo,
     EditRedo,
+    // --- Task-list management ---
+    /// Show/hide the list sidebar.
+    ToggleListPanel,
+    /// Open an existing list by display name.
+    OpenList(String),
+    /// Text in the "new list" name input changed.
+    NewListNameChanged(String),
+    /// Create a new list from the name input.
+    CreateList,
+    /// Delete a list by display name.
+    DeleteList(String),
+    /// Begin renaming the list with this display name (reveals an inline input).
+    StartRenameList(String),
+    /// Text in the rename input changed.
+    RenameInputChanged(String),
+    /// Commit the rename of the list currently being renamed.
+    CommitRenameList,
+    /// Cancel an in-progress rename.
+    CancelRenameList,
+    /// Import a list from an external JSON file (opens a picker).
+    ImportList,
+    ImportListResult(Option<PathBuf>),
+    /// Export the current list to an external JSON file (opens a picker).
+    ExportList,
+    ExportListResult(Option<PathBuf>),
+    // --- Window / integration plumbing ---
     WindowOpened(window::Id),
     WindowClosed(window::Id),
     WindowCloseRequested(window::Id),
@@ -55,9 +78,18 @@ pub struct Taskscape {
     pub(crate) undo_stack: Vec<snapshot::AppSnapshot>,
     pub(crate) redo_stack: Vec<snapshot::AppSnapshot>,
     pub(crate) tasks: TaskList,
-    pub(crate) file_name: String,
-    pub(crate) file_name_editing: String,
-    pub(crate) editing_title: bool,
+    /// Display name of the currently open list, or `None` when none is open
+    /// (the create/load empty-state prompt is shown in that case).
+    pub(crate) current_list: Option<String>,
+    /// Cached browser entries for the sidebar.
+    pub(crate) lists: Vec<ListEntry>,
+    /// Buffer for the "new list" name input (empty-state + sidebar "New").
+    pub(crate) new_list_name: String,
+    /// The list currently being renamed (its old display name) and the buffer
+    /// holding the new name, while an inline rename is in progress.
+    pub(crate) renaming: Option<(String, String)>,
+    /// Whether the list sidebar is visible.
+    pub(crate) show_list_panel: bool,
     /// Whether the tray service is currently linked over IPC.
     pub(crate) ipc_connected: bool,
     /// Set while applying a mutation received from the tray service, so the same
@@ -67,8 +99,6 @@ pub struct Taskscape {
 
 impl Default for Taskscape {
     fn default() -> Self {
-        const DEFAULT_FILE_NAME: &str = "Untitled";
-
         Self {
             window_id: None,
             theme_mode: ThemeMode::Dark,
@@ -77,9 +107,11 @@ impl Default for Taskscape {
             undo_stack: Vec::new(),
             redo_stack: Vec::new(),
             tasks: TaskList::new(),
-            file_name: String::from(DEFAULT_FILE_NAME),
-            file_name_editing: String::from(DEFAULT_FILE_NAME),
-            editing_title: false,
+            current_list: None,
+            lists: Vec::new(),
+            new_list_name: String::new(),
+            renaming: None,
+            show_list_panel: false,
             ipc_connected: false,
             applying_remote: false,
         }
@@ -87,10 +119,6 @@ impl Default for Taskscape {
 }
 
 impl Taskscape {
-    pub(crate) fn is_any_editing(&self) -> bool {
-        self.editing_title
-    }
-
     fn main_window_settings() -> window::Settings {
         window::Settings {
             min_size: Some(Size::new(980.0, 680.0)),
@@ -107,15 +135,28 @@ impl Taskscape {
             iced::font::load(fonts::POPPINS_SEMIBOLD_BYTES).map(|_| Message::FontLoaded),
             iced::font::load(lucide_icons::LUCIDE_FONT_BYTES).map(|_| Message::FontLoaded),
         ]);
+
+        // Populate the sidebar and reopen the last-used list (if it still exists).
+        let mut state = Self::default();
+        state.lists = common::storage::list_all();
+        if let Some(last) = common::storage::load_config().last_open {
+            if state.lists.iter().any(|e| e.name == last) {
+                state.open_list_quiet(&last);
+            }
+        }
+        if state.current_list.is_none() {
+            state.status_message = String::from("Create a new list or load one to begin.");
+        }
+
         let (_id, open) = window::open(Self::main_window_settings());
-        (
-            Self::default(),
-            iced::Task::batch([load_fonts, open.map(Message::WindowOpened)]),
-        )
+        (state, iced::Task::batch([load_fonts, open.map(Message::WindowOpened)]))
     }
 
     fn title(&self, _window: window::Id) -> String {
-        String::from("Taskscape")
+        match &self.current_list {
+            Some(name) => format!("Taskscape — {name}"),
+            None => String::from("Taskscape"),
+        }
     }
 
     fn theme(&self, _window: window::Id) -> Theme {
