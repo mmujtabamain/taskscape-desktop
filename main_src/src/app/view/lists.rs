@@ -12,9 +12,11 @@ use iced::{Alignment, Length};
 use lucide_icons::Icon;
 
 const PANEL_WIDTH: f32 = 248.0;
-const RAIL_WIDTH: f32 = 52.0;
-/// Square cell size for items in the collapsed rail (toggle + list chips).
-const RAIL_CELL: f32 = 36.0;
+const RAIL_WIDTH: f32 = 58.0;
+/// Square cell size for items in the collapsed rail. Matches the rendered size
+/// of an expanded `t_icon_button` (16px glyph + [10,12] padding + 1px border)
+/// so the rail icons don't change size when the panel expands.
+const RAIL_CELL: f32 = 40.0;
 /// Vertical gap between rail cells.
 const RAIL_GAP: f32 = 6.0;
 
@@ -76,42 +78,47 @@ impl Taskscape {
     /// (its initial). Clicking the toggle expands; clicking a chip opens that
     /// list (and expands so the user sees the result).
     fn list_rail(&self) -> AppElement<'_> {
-        // Toggle to expand the panel, then one chip per list — all the same
-        // square cell so they form a clean, centered vertical stack.
-        let toggle = self.rail_cell(
-            rail_glyph(self.theme_mode, Icon::PanelLeftOpen),
-            false,
-            Message::ToggleListPanel,
-        );
+        // Toggle to expand the panel, a "+" to start a new list, then one chip
+        // per list — all the same fixed square cell, centered in the rail.
+        let mut stack = column![
+            self.rail_cell(
+                rail_glyph(self.theme_mode, Icon::PanelLeftOpen),
+                false,
+                Message::ToggleListPanel,
+            ),
+            self.rail_cell(
+                rail_glyph(self.theme_mode, Icon::Plus),
+                false,
+                // Expands the panel where the name input lives (future: focus +
+                // animate the create flow).
+                Message::ToggleListPanel,
+            ),
+        ]
+        .spacing(RAIL_GAP)
+        .width(Length::Fill)
+        .align_x(Alignment::Center);
 
-        let chips = self.lists.iter().fold(
-            column![].spacing(RAIL_GAP).align_x(Alignment::Center),
-            |col, entry| {
-                let is_current = self.current_list.as_deref() == Some(entry.name.as_str());
-                let initial = entry
-                    .name
-                    .chars()
-                    .next()
-                    .map(|c| c.to_uppercase().to_string())
-                    .unwrap_or_default();
-                col.push(self.rail_cell(
-                    rail_initial(self.theme_mode, &initial, is_current),
-                    is_current,
-                    Message::OpenList(entry.name.clone()),
-                ))
-            },
-        );
+        for entry in &self.lists {
+            let is_current = self.current_list.as_deref() == Some(entry.name.as_str());
+            let initial = entry
+                .name
+                .chars()
+                .next()
+                .map(|c| c.to_uppercase().to_string())
+                .unwrap_or_default();
+            stack = stack.push(self.rail_cell(
+                rail_initial(self.theme_mode, &initial, is_current),
+                is_current,
+                Message::OpenList(entry.name.clone()),
+            ));
+        }
 
-        container(
-            column![toggle, Space::new().height(Length::Fixed(2.0)), chips]
-                .spacing(RAIL_GAP)
-                .align_x(Alignment::Center),
-        )
-        .width(Length::Fixed(RAIL_WIDTH))
-        .height(Length::Fill)
-        .padding([10, 0])
-        .style(sidebar_container(self.theme_mode))
-        .into()
+        container(stack)
+            .width(Length::Fixed(RAIL_WIDTH))
+            .height(Length::Fill)
+            .padding([10, 0])
+            .style(sidebar_container(self.theme_mode))
+            .into()
     }
 
     /// One uniform, centered, clickable square cell in the collapsed rail.
