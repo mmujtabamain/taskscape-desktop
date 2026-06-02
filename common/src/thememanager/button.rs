@@ -74,8 +74,12 @@ pub fn button_style(
             }
             button::Status::Pressed => {
                 style.shadow = iced::Shadow::default();
-                if !matches!(kind, ButtonKind::Plain) {
-                    style.border.color = palette.border_strong;
+                match kind {
+                    // Borderless: deepen the hover fill on press, still no border.
+                    ButtonKind::Plain => {
+                        style.background = Some(with_alpha(palette.text_primary, 0.12).into());
+                    }
+                    _ => style.border.color = palette.border_strong,
                 }
                 style
             }

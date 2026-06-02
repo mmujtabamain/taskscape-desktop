@@ -49,27 +49,28 @@ pub fn empty_state_container(mode: ThemeMode) -> impl Fn(&Theme) -> container::S
     }
 }
 
-/// A list row. When `selected`, it gets an accent-tinted fill and an accent
-/// border so the open list reads clearly (the row text uses `palette.accent`,
-/// not the near-black `accent_text` which is only legible on a solid accent
-/// button).
-pub fn list_row_container(
-    mode: ThemeMode,
-    selected: bool,
-) -> impl Fn(&Theme) -> container::Style + Clone {
+/// Dimmed full-window backdrop behind a modal dialog.
+pub fn modal_backdrop(mode: ThemeMode) -> impl Fn(&Theme) -> container::Style + Clone {
     move |_theme: &Theme| {
         let palette = tokens(mode);
-        if selected {
-            container::Style::default()
-                .color(palette.text_primary)
-                .background(with_alpha(palette.accent, 0.16))
-                .border(border(12.0, 1.0, with_alpha(palette.accent, 0.55)))
-        } else {
-            container::Style::default()
-                .color(palette.text_primary)
-                .background(with_alpha(palette.panel_raised, 0.5))
-                .border(border(12.0, 1.0, palette.border))
-        }
+        container::Style::default().background(with_alpha(palette.shadow, 0.55))
+    }
+}
+
+/// A centered modal dialog card: raised surface, rounded, bordered, with a soft
+/// shadow.
+pub fn modal_card(mode: ThemeMode) -> impl Fn(&Theme) -> container::Style + Clone {
+    move |_theme: &Theme| {
+        let palette = tokens(mode);
+        container::Style::default()
+            .color(palette.text_primary)
+            .background(palette.panel_alt)
+            .border(border(16.0, 1.0, with_alpha(palette.border_strong, 0.6)))
+            .shadow(iced::Shadow {
+                color: palette.shadow,
+                offset: iced::Vector::new(0.0, 8.0),
+                blur_radius: 28.0,
+            })
     }
 }
 

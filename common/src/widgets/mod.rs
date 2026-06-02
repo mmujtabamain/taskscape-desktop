@@ -13,7 +13,7 @@ pub use lucide_icon::lucide_icon;
 pub use t_button::t_button;
 pub use t_dropdown::t_dropdown;
 pub use t_editable_title::t_editable_title;
-pub use t_icon_button::t_icon_button;
+pub use t_icon_button::{t_icon_button, t_icon_button_ghost};
 pub use t_input_box::t_input_box;
 pub use t_metric_card::t_metric_card;
 pub use t_small_chip::t_small_chip;

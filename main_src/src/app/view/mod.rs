@@ -3,10 +3,12 @@ mod lists;
 mod tasks;
 mod workspace;
 
+pub(crate) use lists::RENAME_INPUT_ID;
+
 use crate::app::{AppElement, Taskscape};
 use common::thememanager::{panel_alt_container, shell_container, tokens};
 use common::widgets::{t_body, t_caption};
-use iced::widget::{column, container, row};
+use iced::widget::{column, container, row, stack};
 use iced::{Alignment, Length};
 
 impl Taskscape {
@@ -25,11 +27,16 @@ impl Taskscape {
             .spacing(0)
             .height(Length::Fill);
 
-        container(body)
+        let shell = container(body)
             .width(Length::Fill)
             .height(Length::Fill)
-            .style(shell_container(self.theme_mode))
-            .into()
+            .style(shell_container(self.theme_mode));
+
+        // Overlay the rename modal on top when a rename is in progress.
+        match self.rename_modal() {
+            Some(modal) => stack![shell, modal].into(),
+            None => shell.into(),
+        }
     }
 
     /// The task workspace when a list is open, else the empty-state prompt.

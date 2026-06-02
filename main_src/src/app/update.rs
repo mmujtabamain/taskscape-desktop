@@ -58,6 +58,11 @@ impl Taskscape {
             }
             Message::StartRenameList(name) => {
                 self.renaming = Some((name.clone(), name));
+                // Open the rename modal with its input focused and the cursor at
+                // the end of the existing name.
+                use crate::app::view::RENAME_INPUT_ID;
+                return iced::widget::operation::focus(RENAME_INPUT_ID)
+                    .chain(iced::widget::operation::move_cursor_to_end(RENAME_INPUT_ID));
             }
             Message::RenameInputChanged(value) => {
                 if let Some((_, new_name)) = self.renaming.as_mut() {

@@ -3,13 +3,21 @@
 
 use crate::app::{AppElement, Message, Taskscape};
 use common::thememanager::{
-    ButtonKind, ThemeMode, button_style, empty_state_container, list_row_container,
-    sidebar_container, tokens,
+    ButtonKind, ThemeMode, empty_state_container, modal_backdrop, modal_card, sidebar_container,
+    text_input_style, tokens,
 };
-use common::widgets::{lucide_icon, t_body, t_button, t_caption, t_heading, t_icon_button, t_input_box};
-use iced::widget::{Space, button, column, container, row, scrollable, text};
+use common::widgets::{
+    lucide_icon, t_body, t_button, t_heading, t_icon_button, t_icon_button_ghost, t_input_box,
+};
+use iced::widget::{
+    Space, button, center, column, container, mouse_area, opaque, row, scrollable, text,
+    text_input,
+};
 use iced::{Alignment, Length};
 use lucide_icons::Icon;
+
+/// Id of the rename modal's text input, so it can be focused when the modal opens.
+pub const RENAME_INPUT_ID: &str = "rename-modal-input";
 
 const PANEL_WIDTH: f32 = 248.0;
 const RAIL_WIDTH: f32 = 58.0;
@@ -21,6 +29,8 @@ const ROW_H: f32 = 42.0;
 const RAIL_CELL: f32 = ROW_H;
 /// Vertical gap between sidebar members, identical in both states.
 const RAIL_GAP: f32 = 8.0;
+/// Horizontal padding inside a panel list row.
+const ROW_PAD_X: u16 = 8;
 
 /// A lucide glyph sized for a rail cell, in the secondary text colour.
 fn rail_glyph(mode: ThemeMode, icon: Icon) -> AppElement<'static> {
@@ -224,90 +234,108 @@ impl Taskscape {
         .into()
     }
 
-    /// A single panel row: open/rename/delete, or an inline rename editor.
+    /// A single panel row: the whole row is one button that opens the list, with
+    /// nested ghost rename/delete actions. Renaming happens in a separate modal
+    /// (see `rename_modal`), so the row layout is fixed and never reflows.
     fn list_row<'a>(&'a self, entry: &'a common::storage::ListEntry) -> AppElement<'a> {
-        let palette = tokens(self.theme_mode);
         let is_current = self.current_list.as_deref() == Some(entry.name.as_str());
 
-        // Inline rename editor for the list being renamed.
-        if let Some((old_name, new_name)) = &self.renaming {
-            if old_name == &entry.name {
-                let editor = row![
-                    t_input_box(
-                        self.theme_mode,
-                        "Name…",
-                        new_name,
-                        Message::RenameInputChanged,
-                        Length::Fill,
-                        Some(Message::CommitRenameList),
-                    ),
-                    t_icon_button(
-                        self.theme_mode,
-                        Icon::Check,
-                        None,
-                        Some(Message::CommitRenameList),
-                    ),
-                    t_icon_button(self.theme_mode, Icon::X, None, Some(Message::CancelRenameList)),
-                ]
-                .spacing(5)
-                .align_y(Alignment::Center);
-
-                return container(editor)
-                    .height(Length::Fixed(ROW_H))
-                    .align_y(Alignment::Center)
-                    .padding([0, 6])
-                    .style(list_row_container(self.theme_mode, true))
-                    .into();
-            }
-        }
-
         let name_color = if is_current {
-            palette.accent
+            tokens(self.theme_mode).accent
         } else {
-            palette.text_primary
+            tokens(self.theme_mode).text_primary
         };
 
-        let label = column![
-            t_body(&entry.name, 14.0, name_color),
-            t_caption(format!("{} tasks", entry.task_count), 11.0, palette.text_muted),
-        ]
-        .spacing(1);
-
-        // Clicking the label area opens the list. Transparent so only the row
-        // container provides the background (no redundant box behind the title).
-        let open_button = button(label)
-            .style(button_style(self.theme_mode, ButtonKind::Plain))
-            .width(Length::Fill)
-            .padding([3, 5])
-            .on_press(Message::OpenList(entry.name.clone()));
-
-        let actions = row![
-            t_icon_button(
+        let content = row![
+            t_body(&entry.name, 14.0, name_color).width(Length::Fill),
+            t_icon_button_ghost(
                 self.theme_mode,
                 Icon::Pencil,
-                None,
                 Some(Message::StartRenameList(entry.name.clone())),
             ),
-            t_icon_button(
+            t_icon_button_ghost(
                 self.theme_mode,
                 Icon::Trash2,
-                None,
                 Some(Message::DeleteList(entry.name.clone())),
             ),
         ]
-        .spacing(2)
-        .align_y(Alignment::Center);
-
-        container(
-            row![open_button, actions]
-                .align_y(Alignment::Center)
-                .spacing(4),
-        )
-        .height(Length::Fixed(ROW_H))
+        // Fill the row's fixed height and centre everything vertically so the
+        // name lines up with the action icons.
+        .height(Length::Fill)
         .align_y(Alignment::Center)
-        .padding([0, 6])
-        .style(list_row_container(self.theme_mode, is_current))
-        .into()
+        .spacing(4);
+
+        // The nested ghost actions capture their own clicks (iced updates the
+        // child first and bails if it captured), so they don't trigger "open".
+        button(content)
+            .width(Length::Fill)
+            .height(Length::Fixed(ROW_H))
+            .padding([0, ROW_PAD_X])
+            .style(rail_cell_button_style(self.theme_mode, is_current))
+            .on_press(Message::OpenList(entry.name.clone()))
+            .into()
+    }
+
+    /// The rename modal: a dimmed backdrop (click to cancel) with a centered card
+    /// holding the rename input and Cancel / Rename actions. Returned only when a
+    /// rename is in progress; stacked over the main UI by `view_root`.
+    pub(crate) fn rename_modal(&self) -> Option<AppElement<'_>> {
+        let (old_name, new_name) = self.renaming.as_ref()?;
+        let palette = tokens(self.theme_mode);
+
+        let card = container(
+            column![
+                t_heading("Rename list", 20.0, palette.text_primary),
+                t_body(
+                    format!("Renaming \"{old_name}\""),
+                    13.0,
+                    palette.text_muted,
+                ),
+                text_input("List name…", new_name)
+                    .id(RENAME_INPUT_ID)
+                    .width(Length::Fill)
+                    .padding([12, 14])
+                    .size(16)
+                    .on_input(Message::RenameInputChanged)
+                    .on_submit(Message::CommitRenameList)
+                    .style(text_input_style(self.theme_mode)),
+                row![
+                    Space::new().width(Length::Fill),
+                    t_button(
+                        self.theme_mode,
+                        None,
+                        "Cancel",
+                        ButtonKind::Ghost,
+                        Some(Message::CancelRenameList),
+                    ),
+                    t_button(
+                        self.theme_mode,
+                        Some(Icon::Check),
+                        "Rename",
+                        ButtonKind::Primary,
+                        Some(Message::CommitRenameList),
+                    ),
+                ]
+                .spacing(8)
+                .align_y(Alignment::Center),
+            ]
+            .spacing(14),
+        )
+        .width(Length::Fixed(380.0))
+        .padding(20)
+        .style(modal_card(self.theme_mode));
+
+        // Backdrop fills the window, dims the UI, and cancels on click; the card
+        // is centered and swallows its own clicks (it is interactive content).
+        let backdrop = mouse_area(
+            container(center(card))
+                .width(Length::Fill)
+                .height(Length::Fill)
+                .style(modal_backdrop(self.theme_mode)),
+        )
+        .on_press(Message::CancelRenameList);
+
+        Some(opaque(backdrop))
     }
 
     /// The create-or-load prompt shown in the main area when no list is open.
