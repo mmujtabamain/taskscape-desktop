@@ -247,7 +247,12 @@ impl Taskscape {
         };
 
         let content = row![
-            t_body(&entry.name, 14.0, name_color).width(Length::Fill),
+            // Left-pad the name so it lines up with the "New list…" input text
+            // above (the input's inset is 14px; the row already pads 8px, so add
+            // the remaining 6px here).
+            container(t_body(&entry.name, 14.0, name_color))
+                .width(Length::Fill)
+                .padding([0, 6]),
             t_icon_button_ghost(
                 self.theme_mode,
                 Icon::Pencil,
