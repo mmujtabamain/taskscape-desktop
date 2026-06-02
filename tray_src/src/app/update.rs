@@ -131,6 +131,11 @@ impl TrayApp {
                     return window::close(id);
                 }
             }
+            Message::DragConfirm => {
+                if let Some(id) = self.confirm_window_id {
+                    return window::drag(id);
+                }
+            }
             Message::ShowMainRequested => {
                 if self.ipc_connected {
                     // Main app is running: ask it to come forward + open sidebar.

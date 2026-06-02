@@ -12,7 +12,7 @@ use common::thememanager::{
     tokens,
 };
 use common::widgets::{lucide_icon, t_body, t_button, t_caption, t_heading, t_icon_button, t_input_box};
-use iced::widget::{Space, button, checkbox, column, container, row, scrollable};
+use iced::widget::{Space, button, checkbox, column, container, mouse_area, row, scrollable};
 use iced::{Alignment, Length};
 use lucide_icons::Icon;
 
@@ -203,11 +203,17 @@ impl TrayApp {
         ]
         .spacing(8);
 
-        container(card)
+        let panel = container(card)
             .width(Length::Fill)
             .height(Length::Fill)
             .padding(14)
-            .style(mini_shell_container(self.theme_mode))
+            .style(mini_shell_container(self.theme_mode));
+
+        // The window is borderless (no title bar), so make the whole card a drag
+        // handle. The nested buttons capture their own clicks (Cancel/Quit still
+        // work); dragging anywhere else moves the window.
+        mouse_area(panel)
+            .on_press(Message::DragConfirm)
             .into()
     }
 }

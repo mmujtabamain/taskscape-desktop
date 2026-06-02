@@ -38,6 +38,9 @@ pub enum Message {
     ConfirmQuit,
     /// Dismiss the quit confirmation popover.
     CancelQuit,
+    /// Start dragging the quit popover window (it is borderless, so it has no
+    /// title bar to drag).
+    DragConfirm,
     /// Clicking the list title: bring the main app forward + open its sidebar
     /// (launching it first if it is closed).
     ShowMainRequested,
