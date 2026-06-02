@@ -1,6 +1,7 @@
 use crate::app::hotkey::HotkeyCommand;
 use crate::app::native_menu::NativeMenuCommand;
 use crate::app::tray::TrayCommand;
+use crate::ipc::IpcInbound;
 use iced::{keyboard, window};
 use std::path::PathBuf;
 
@@ -36,4 +37,8 @@ pub enum Message {
     HotkeyEvent(HotkeyCommand),
     HotkeyInstalled(Result<(), String>),
     KeyboardEvent(keyboard::Event),
+    /// A link event from the peer process (main app ⇄ tray service). Carries the
+    /// inbound IPC event; the `update` loop interprets it based on which role
+    /// this process plays (see `app::role`).
+    IpcEvent(IpcInbound),
 }

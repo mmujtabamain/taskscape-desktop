@@ -4,11 +4,24 @@ use crate::thememanager::{ThemeMode, app_theme};
 use crate::utils::fonts;
 use iced::{Settings, Size, Subscription, Theme, daemon, keyboard, window};
 
+/// Which of the two processes this instance is. Both run the same `Taskscape`
+/// state and `update`/`view` code; the role decides which window opens, which
+/// installers run, and which side of the IPC link is used.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AppRole {
+    /// The main-window app: source of truth, IPC client.
+    Main,
+    /// The background tray service: tray icon + mini window + hotkey, IPC server.
+    Tray,
+}
+
 #[derive(Debug, Clone)]
 pub struct Taskscape {
+    /// Which process this is (see [`AppRole`]).
+    pub(crate) role: AppRole,
     pub(crate) window_id: Option<window::Id>,
-    /// The compact "mini" window toggled from the menu bar icon. Shares the
-    /// same `tasks` as the main window; `None` when it is not open.
+    /// The compact "mini" window toggled from the menu bar icon. Owned by the
+    /// tray service; `None` when it is not open (and always `None` for `Main`).
     pub(crate) mini_window_id: Option<window::Id>,
     pub(crate) theme_mode: ThemeMode,
     pub(crate) title_input: String,
@@ -20,13 +33,19 @@ pub struct Taskscape {
     pub(crate) file_name: String,
     pub(crate) file_name_editing: String,
     pub(crate) editing_title: bool,
+    /// Whether the peer process is currently linked over IPC.
+    pub(crate) ipc_connected: bool,
+    /// Set while applying a mutation received from the peer, so the same change
+    /// is not echoed straight back and looped.
+    pub(crate) applying_remote: bool,
 }
 
-impl Default for Taskscape {
-    fn default() -> Self {
+impl Taskscape {
+    fn new(role: AppRole) -> Self {
         const DEFAULT_FILE_NAME: &'static str = "Untitled";
 
         Self {
+            role,
             window_id: None,
             mini_window_id: None,
             theme_mode: ThemeMode::Dark,
@@ -39,6 +58,8 @@ impl Default for Taskscape {
             file_name: String::from(DEFAULT_FILE_NAME),
             file_name_editing: String::from(DEFAULT_FILE_NAME),
             editing_title: false,
+            ipc_connected: false,
+            applying_remote: false,
         }
     }
 }
@@ -82,7 +103,21 @@ impl Taskscape {
         }
     }
 
-    pub(crate) fn boot() -> (Self, AppTask) {
+    /// A hidden, throwaway window the **tray service** opens at boot purely to
+    /// get a main-thread context for installing the tray icon and global hotkey
+    /// (both must run on the UI thread). It is closed immediately afterwards; a
+    /// `daemon` keeps running with zero windows.
+    fn bootstrap_window_settings() -> window::Settings {
+        window::Settings {
+            size: Size::new(1.0, 1.0),
+            visible: false,
+            decorations: false,
+            exit_on_close_request: false,
+            ..window::Settings::default()
+        }
+    }
+
+    pub(crate) fn boot(role: AppRole) -> (Self, AppTask) {
         // Load custom fonts via Task so they are guaranteed to be available
         // before the first view call, complementing the builder .font() calls.
         let load_fonts = iced::Task::batch([
@@ -90,14 +125,22 @@ impl Taskscape {
             iced::font::load(fonts::POPPINS_SEMIBOLD_BYTES).map(|_| Message::FontLoaded),
             iced::font::load(lucide_icons::LUCIDE_FONT_BYTES).map(|_| Message::FontLoaded),
         ]);
-        // Unlike `application`, a `daemon` opens no window on its own — we open
-        // the main window here and discard the returned id (it arrives again via
-        // the `WindowOpened` subscription, where installers are wired up).
-        let (_id, open_main) = window::open(Self::main_window_settings());
-        (
-            Self::default(),
-            iced::Task::batch([load_fonts, open_main.map(Message::WindowOpened)]),
-        )
+
+        // A `daemon` opens no window on its own. The main app opens its window
+        // here; the tray service opens a hidden bootstrap window (see above) and
+        // otherwise waits for tray/hotkey interactions to open the mini window.
+        let open = match role {
+            AppRole::Main => {
+                let (_id, task) = window::open(Self::main_window_settings());
+                task.map(Message::WindowOpened)
+            }
+            AppRole::Tray => {
+                let (_id, task) = window::open(Self::bootstrap_window_settings());
+                task.map(Message::WindowOpened)
+            }
+        };
+
+        (Self::new(role), iced::Task::batch([load_fonts, open]))
     }
 
     pub(crate) fn title(&self, window: window::Id) -> String {
@@ -113,6 +156,7 @@ impl Taskscape {
     }
 
     /// Dispatches to the mini or full view depending on which window is drawing.
+    /// The tray service only ever draws the mini window; the main app the root.
     pub(crate) fn view_window(&self, window: window::Id) -> crate::app::AppElement<'_> {
         if self.mini_window_id == Some(window) {
             self.mini_view()
@@ -122,33 +166,47 @@ impl Taskscape {
     }
 
     pub(crate) fn subscription(&self) -> Subscription<Message> {
-        Subscription::batch([
+        // Window/keyboard plumbing is shared; the role decides which integrations
+        // and which side of the IPC link are wired up.
+        let mut subs = vec![
             keyboard::listen().map(Message::KeyboardEvent),
             window::open_events().map(Message::WindowOpened),
             window::close_events().map(Message::WindowClosed),
             window::close_requests().map(Message::WindowCloseRequested),
-            crate::app::native_menu::subscription().map(Message::NativeMenuEvent),
-            crate::app::tray::subscription().map(Message::TrayEvent),
-            crate::app::hotkey::subscription().map(Message::HotkeyEvent),
-        ])
+        ];
+
+        match self.role {
+            AppRole::Main => {
+                subs.push(crate::app::native_menu::subscription().map(Message::NativeMenuEvent));
+                subs.push(crate::ipc::client::subscription().map(Message::IpcEvent));
+            }
+            AppRole::Tray => {
+                subs.push(crate::app::tray::subscription().map(Message::TrayEvent));
+                subs.push(crate::app::hotkey::subscription().map(Message::HotkeyEvent));
+                subs.push(crate::ipc::server::subscription().map(Message::IpcEvent));
+            }
+        }
+
+        Subscription::batch(subs)
     }
 }
 
-pub fn run() -> iced::Result {
-    // A `daemon` (rather than `application`) lets us drive more than one window:
-    // the full main window plus the compact "mini" window toggled from the menu
-    // bar icon. Both windows share the same `Taskscape` state, so editing tasks
-    // in one is immediately reflected in the other. Windows are opened
-    // programmatically (see `boot` / the tray handler) instead of via a builder.
-    daemon(Taskscape::boot, Taskscape::update, Taskscape::view_window)
-        .title(Taskscape::title)
-        .theme(Taskscape::theme)
-        .subscription(Taskscape::subscription)
-        .font(fonts::INTER_REGULAR_BYTES)
-        .font(fonts::POPPINS_SEMIBOLD_BYTES)
-        .font(lucide_icons::LUCIDE_FONT_BYTES)
-        .default_font(fonts::inter_regular())
-        .settings(Settings::default())
-        .antialiasing(true)
-        .run()
+/// Runs one of the two apps as an `iced` daemon. Both processes share this crate
+/// and the `Taskscape` state/update/view code; `role` selects the behaviour.
+pub fn run(role: AppRole) -> iced::Result {
+    daemon(
+        move || Taskscape::boot(role),
+        Taskscape::update,
+        Taskscape::view_window,
+    )
+    .title(Taskscape::title)
+    .theme(Taskscape::theme)
+    .subscription(Taskscape::subscription)
+    .font(fonts::INTER_REGULAR_BYTES)
+    .font(fonts::POPPINS_SEMIBOLD_BYTES)
+    .font(lucide_icons::LUCIDE_FONT_BYTES)
+    .default_font(fonts::inter_regular())
+    .settings(Settings::default())
+    .antialiasing(true)
+    .run()
 }

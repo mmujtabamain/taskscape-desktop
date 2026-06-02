@@ -21,19 +21,34 @@ impl Taskscape {
         self.redo_stack.clear();
     }
 
-    pub(crate) fn add_task(&mut self) {
+    /// Adds the task currently in the composer input. Returns the added title so
+    /// the caller can mirror it to the linked peer over IPC, or `None` if the
+    /// input was empty (nothing added).
+    pub(crate) fn add_task(&mut self) -> Option<String> {
         let title = self.title_input.trim().to_owned();
 
         if title.is_empty() {
-            return;
+            return None;
         }
 
         self.push_history();
 
-        self.tasks.push(TaskItem::new(title));
+        self.tasks.push(TaskItem::new(title.clone()));
 
         self.title_input.clear();
         self.due_date_input.clear();
+        self.status_message = String::from("Task added.");
+        Some(title)
+    }
+
+    /// Appends a task with an explicit title (used when applying a peer's add over
+    /// IPC, where there is no composer input to read).
+    pub(crate) fn add_task_with_title(&mut self, title: String) {
+        if title.trim().is_empty() {
+            return;
+        }
+        self.push_history();
+        self.tasks.push(TaskItem::new(title));
         self.status_message = String::from("Task added.");
     }
 

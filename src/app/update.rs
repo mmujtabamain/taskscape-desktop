@@ -49,10 +49,18 @@ impl Taskscape {
             }
             Message::DueDateChanged(value) => self.due_date_input = value,
             Message::ToggleTaskCompleted(index, completed) => {
-                self.toggle_task_completed(index, completed)
+                self.toggle_task_completed(index, completed);
+                self.broadcast(crate::ipc::IpcMessage::ToggleTaskCompleted { index, completed });
             }
-            Message::AddTask => self.add_task(),
-            Message::RemoveTask(index) => self.remove_task(index),
+            Message::AddTask => {
+                if let Some(title) = self.add_task() {
+                    self.broadcast(crate::ipc::IpcMessage::AddTask { title });
+                }
+            }
+            Message::RemoveTask(index) => {
+                self.remove_task(index);
+                self.broadcast(crate::ipc::IpcMessage::RemoveTask { index });
+            }
             Message::ClearCompleted => {
                 self.push_history();
                 self.tasks.retain(|task| !task.is_completed());
@@ -77,24 +85,42 @@ impl Taskscape {
             Message::EditUndo => self.undo(),
             Message::EditRedo => self.redo(),
             Message::WindowOpened(window_id) => {
+                use crate::app::application::AppRole;
+
                 // The mini window records its own id when opened (see TrayEvent),
-                // so anything else is the main window. Only the main window gets
-                // the native menu and menu bar icon installed.
+                // so a window that isn't the mini window is this role's primary
+                // window: the main app's task window, or the tray service's hidden
+                // bootstrap window.
                 if self.mini_window_id == Some(window_id) {
                     return Task::none();
                 }
-                self.window_id = Some(window_id);
-                // Both installers must run on the UI thread; window::run guarantees that.
-                let install_menu = window::run(window_id, |window| {
-                    crate::app::native_menu::install_for_window(window)
-                })
-                .map(Message::NativeMenuInstalled);
-                let install_tray = window::run(window_id, |_window| crate::app::tray::install())
-                    .map(Message::TrayInstalled);
-                let install_hotkey =
-                    window::run(window_id, |_window| crate::app::hotkey::install())
-                        .map(Message::HotkeyInstalled);
-                return Task::batch([install_menu, install_tray, install_hotkey]);
+
+                match self.role {
+                    AppRole::Main => {
+                        self.window_id = Some(window_id);
+                        // The native menu must be installed on the UI thread;
+                        // window::run guarantees that.
+                        return window::run(window_id, |window| {
+                            crate::app::native_menu::install_for_window(window)
+                        })
+                        .map(Message::NativeMenuInstalled);
+                    }
+                    AppRole::Tray => {
+                        // This is the hidden bootstrap window: install the tray
+                        // icon and global hotkey on the UI thread, then close it.
+                        // The daemon keeps running with zero windows; the mini
+                        // window opens later on demand.
+                        self.window_id = Some(window_id);
+                        let install_tray =
+                            window::run(window_id, |_window| crate::app::tray::install())
+                                .map(Message::TrayInstalled);
+                        let install_hotkey =
+                            window::run(window_id, |_window| crate::app::hotkey::install())
+                                .map(Message::HotkeyInstalled);
+                        let close_bootstrap = window::close(window_id);
+                        return Task::batch([install_tray, install_hotkey, close_bootstrap]);
+                    }
+                }
             }
             Message::WindowClosed(window_id) => {
                 // Authoritative cleanup: whenever a window actually closes (by any
@@ -183,6 +209,7 @@ impl Taskscape {
                     self.status_message = format!("Global hotkey: {error}");
                 }
             }
+            Message::IpcEvent(event) => return self.handle_ipc(event),
             Message::KeyboardEvent(event) => {
                 if let keyboard::Event::KeyPressed { key, modifiers, .. } = event {
                     use iced::keyboard::Key;
