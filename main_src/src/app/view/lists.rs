@@ -38,28 +38,32 @@ fn rail_initial(mode: ThemeMode, initial: &str, is_current: bool) -> AppElement<
     text(initial.to_owned()).size(15.0).color(color).into()
 }
 
-/// Button style for a rail cell: an accent-tinted fill when selected, a subtle
-/// raised fill otherwise, with a matching border. Drawn on the button directly
-/// so the cell stays a fixed square.
+/// Button style for a rail cell. The non-selected look is kept *identical* to
+/// the expanded panel's `ButtonKind::Icon` buttons (same fill, border, radius,
+/// and hover) so collapsed and expanded share the exact same shades; the
+/// selected cell adds an accent tint.
 fn rail_cell_button_style(
     mode: ThemeMode,
     selected: bool,
 ) -> impl Fn(&iced::Theme, iced::widget::button::Status) -> iced::widget::button::Style + Clone {
-    use common::thememanager::helpers::{border, with_alpha};
+    use common::thememanager::helpers::{border, mix, with_alpha};
     move |_theme, status| {
         let palette = tokens(mode);
         let (bg, border_color) = if selected {
             (with_alpha(palette.accent, 0.16), with_alpha(palette.accent, 0.55))
         } else {
-            (with_alpha(palette.panel_raised, 0.5), palette.border)
+            // Matches ButtonKind::Icon exactly.
+            (palette.panel_raised, palette.border)
         };
         let mut style = iced::widget::button::Style {
             background: Some(bg.into()),
             text_color: palette.text_primary,
-            border: border(10.0, 1.0, border_color),
+            border: border(12.0, 1.0, border_color),
             ..Default::default()
         };
         if matches!(status, iced::widget::button::Status::Hovered) && !selected {
+            // Same hover as ButtonKind::Icon.
+            style.background = Some(mix(palette.panel_raised, palette.panel_alt, 0.55).into());
             style.border.color = palette.border_strong;
         }
         style
