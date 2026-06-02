@@ -112,35 +112,56 @@ pub fn main_screen_scale() -> f64 {
     1.0
 }
 
-/// Disables the drop shadow of the window backing `handle`. macOS draws the
-/// shadow on the (square) window frame, which appears as a square outline behind
-/// the mini window's transparent rounded corners; turning it off removes that.
-/// Must run on the UI thread (call inside `window::run`).
+/// Gives the window backing `handle` genuinely rounded corners with `radius`
+/// logical points.
+///
+/// A borderless transparent `NSWindow` otherwise shows square edges: the window
+/// frame is rectangular and its drop shadow is square. The robust fix (per the
+/// macOS forums) is to clip the *content view's CALayer* to a rounded rect so the
+/// GPU surface itself is rounded, make the window non-opaque with a clear
+/// background, and drop the square shadow. Must run on the UI thread (call inside
+/// `window::run`).
 #[cfg(target_os = "macos")]
-pub fn disable_window_shadow(handle: &dyn iced::window::raw_window_handle::HasWindowHandle) {
+pub fn round_window(
+    handle: &dyn iced::window::raw_window_handle::HasWindowHandle,
+    radius: f64,
+) {
     use iced::window::raw_window_handle::RawWindowHandle;
-    use objc2_app_kit::NSView;
+    use objc2_app_kit::{NSColor, NSView};
 
     let Ok(window_handle) = handle.window_handle() else {
         return;
     };
-    if let RawWindowHandle::AppKit(appkit) = window_handle.as_raw() {
-        // SAFETY: we're on the UI thread (window::run guarantees it) and the view
-        // pointer is valid for the lifetime of this call.
-        unsafe {
-            let view: &NSView = appkit.ns_view.cast().as_ref();
-            if let Some(window) = view.window() {
-                window.setHasShadow(false);
-                // Nudge AppKit to recompute the shadow region immediately.
-                window.invalidateShadow();
-            }
+    let RawWindowHandle::AppKit(appkit) = window_handle.as_raw() else {
+        return;
+    };
+
+    // SAFETY: we're on the UI thread (window::run guarantees it) and the view
+    // pointer is valid for the lifetime of this call.
+    unsafe {
+        let view: &NSView = appkit.ns_view.cast().as_ref();
+
+        // Clip the view's backing layer to a rounded rect — this rounds the
+        // actual rendered surface, killing the square corners.
+        view.setWantsLayer(true);
+        if let Some(layer) = view.layer() {
+            layer.setCornerRadius(radius);
+            layer.setMasksToBounds(true);
+        }
+
+        if let Some(window) = view.window() {
+            window.setOpaque(false);
+            window.setBackgroundColor(Some(&NSColor::clearColor()));
+            window.setHasShadow(false);
+            window.invalidateShadow();
         }
     }
 }
 
 #[cfg(not(target_os = "macos"))]
-pub fn disable_window_shadow(
+pub fn round_window(
     _handle: &dyn iced::window::raw_window_handle::HasWindowHandle,
+    _radius: f64,
 ) {
 }
 

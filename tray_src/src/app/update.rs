@@ -45,14 +45,14 @@ impl TrayApp {
             }
             Message::WindowOpened(window_id) => {
                 // The mini window and the confirm popover are both transparent +
-                // rounded: strip their square drop shadow so the corners aren't
-                // framed by it. Must run on the UI thread; window::run guarantees
-                // that. (Discard the unit result.)
+                // rounded: clip their content layer to a rounded rect (matching
+                // the shell's 16px radius) so the corners aren't square. Must run
+                // on the UI thread; window::run guarantees that.
                 if self.mini_window_id == Some(window_id)
                     || self.confirm_window_id == Some(window_id)
                 {
                     return window::run(window_id, |window| {
-                        crate::app::tray::disable_window_shadow(window);
+                        crate::app::tray::round_window(window, 16.0);
                     })
                     .discard();
                 }
@@ -84,6 +84,16 @@ impl TrayApp {
                     return window::close(id);
                 }
                 if self.confirm_window_id == Some(id) {
+                    self.confirm_window_id = None;
+                    return window::close(id);
+                }
+            }
+            Message::WindowEvent(id, event) => {
+                // Dismiss the quit popover as soon as it loses focus, like a
+                // native popover.
+                if matches!(event, window::Event::Unfocused)
+                    && self.confirm_window_id == Some(id)
+                {
                     self.confirm_window_id = None;
                     return window::close(id);
                 }
@@ -168,11 +178,11 @@ impl TrayApp {
         Task::batch([open.map(Message::WindowOpened), window::gain_focus(id)])
     }
 
-    /// Quits the tray service. Tells the main app we're going (best-effort) so it
-    /// shows "service offline", then exits the process.
+    /// Quits Taskscape. Asks the main app to exit too (so quitting takes the whole
+    /// app down), then exits this process.
     fn quit(&mut self) -> AppTask {
         if self.ipc_connected {
-            common::ipc::server::send(&IpcMessage::Bye);
+            common::ipc::server::send(&IpcMessage::Shutdown);
         }
         iced::exit()
     }

@@ -60,8 +60,8 @@ impl TrayApp {
             IpcMessage::ToggleTaskCompleted { index, completed } => {
                 self.tasks.set_completed(index, completed);
             }
-            // The tray never receives ShowMain (it's tray→main only).
-            IpcMessage::ShowMain | IpcMessage::Bye => {}
+            // The tray never receives these (they are tray→main only).
+            IpcMessage::ShowMain | IpcMessage::Shutdown | IpcMessage::Bye => {}
         }
 
         self.applying_remote = false;

@@ -20,5 +20,8 @@ global-hotkey = "0.8"
 # window under the (physical-pixel) menu-bar icon rect.
 # `NSView`/`NSWindow`: disable the mini window's drop shadow so its transparent
 # rounded corners don't sit inside a square shadow outline.
-objc2-app-kit = { version = "0.3", features = ["NSScreen", "NSView", "NSWindow", "NSResponder"] }
+objc2-app-kit = { version = "0.3", features = ["NSScreen", "NSView", "NSWindow", "NSResponder", "NSColor"] }
 objc2-foundation = "0.3"
+# CALayer (cornerRadius + masksToBounds) to clip the window's GPU surface to a
+# rounded rect, so the transparent corners don't show square edges.
+objc2-quartz-core = { version = "0.3", features = ["CALayer", "objc2-core-foundation"] }

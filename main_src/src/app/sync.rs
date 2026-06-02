@@ -73,6 +73,11 @@ impl Taskscape {
                     ]);
                 }
             }
+            // The user quit Taskscape from the tray: exit too.
+            IpcMessage::Shutdown => {
+                self.applying_remote = false;
+                return iced::exit();
+            }
             // The main app is the source of truth, so it never adopts a peer's
             // `Hello`; a `Bye` is handled by the transport's disconnect.
             IpcMessage::Hello { .. } | IpcMessage::Bye => {}

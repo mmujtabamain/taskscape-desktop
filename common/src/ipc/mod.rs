@@ -49,6 +49,9 @@ pub enum IpcMessage {
     /// Sent by the **tray** to ask the main app to come forward and open its list
     /// sidebar (so the user can change the current list).
     ShowMain,
+    /// Sent by the **tray** when the user quits Taskscape: the main app should
+    /// exit too, so quitting takes the whole app down.
+    Shutdown,
     /// Graceful "I'm closing / unlinking" notice. A plain socket EOF is treated
     /// the same way, so this is best-effort.
     Bye,

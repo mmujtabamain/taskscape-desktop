@@ -25,6 +25,8 @@ pub enum Message {
     WindowOpened(window::Id),
     WindowClosed(window::Id),
     WindowCloseRequested(window::Id),
+    /// Any window event (used to dismiss the quit popover when it loses focus).
+    WindowEvent(window::Id, window::Event),
     TrayEvent(tray::TrayCommand),
     TrayInstalled(Result<(), String>),
     HotkeyEvent(hotkey::HotkeyCommand),
@@ -173,6 +175,7 @@ impl TrayApp {
             window::open_events().map(Message::WindowOpened),
             window::close_events().map(Message::WindowClosed),
             window::close_requests().map(Message::WindowCloseRequested),
+            window::events().map(|(id, event)| Message::WindowEvent(id, event)),
             tray::subscription().map(Message::TrayEvent),
             hotkey::subscription().map(Message::HotkeyEvent),
             common::ipc::server::subscription().map(Message::IpcEvent),
