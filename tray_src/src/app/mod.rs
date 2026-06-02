@@ -29,6 +29,8 @@ pub enum Message {
     HotkeyEvent(hotkey::HotkeyCommand),
     HotkeyInstalled(Result<(), String>),
     KeyboardEvent(keyboard::Event),
+    /// Quit the tray service (from the mini window's quit button).
+    QuitRequested,
     /// A link event from the main app (IPC server side).
     IpcEvent(common::ipc::IpcInbound),
 }
@@ -42,7 +44,6 @@ pub struct TrayApp {
     pub(crate) mini_window_id: Option<window::Id>,
     pub(crate) theme_mode: ThemeMode,
     pub(crate) title_input: String,
-    pub(crate) file_name: String,
     pub(crate) status_message: String,
     pub(crate) tasks: TaskList,
     /// Whether the main app is currently linked over IPC.
@@ -59,7 +60,6 @@ impl Default for TrayApp {
             mini_window_id: None,
             theme_mode: ThemeMode::Dark,
             title_input: String::new(),
-            file_name: String::from("Taskscape"),
             status_message: String::from("Ready."),
             tasks: TaskList::new(),
             ipc_connected: false,

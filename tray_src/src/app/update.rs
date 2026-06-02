@@ -89,7 +89,9 @@ impl TrayApp {
                     };
                     return self.toggle_mini_window(Some(anchor));
                 }
+                TrayCommand::Quit => return self.quit(),
             },
+            Message::QuitRequested => return self.quit(),
             Message::TrayInstalled(result) => {
                 if let Err(error) = result {
                     self.status_message = format!("Menu bar icon: {error}");
@@ -122,6 +124,15 @@ impl TrayApp {
         }
 
         Task::none()
+    }
+
+    /// Quits the tray service. Tells the main app we're going (best-effort) so it
+    /// shows "service offline", then exits the process.
+    fn quit(&mut self) -> AppTask {
+        if self.ipc_connected {
+            common::ipc::server::send(&IpcMessage::Bye);
+        }
+        iced::exit()
     }
 
     /// Toggles the compact mini window: open + focus it if hidden, close it if

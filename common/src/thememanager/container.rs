@@ -27,6 +27,30 @@ pub fn mini_shell_container(mode: ThemeMode) -> impl Fn(&Theme) -> container::St
     }
 }
 
+/// A dense task row in the mini window: subtle raised fill, tight radius, faint
+/// border. `done` mutes it to read as completed.
+pub fn mini_row(mode: ThemeMode, done: bool) -> impl Fn(&Theme) -> container::Style + Clone {
+    move |_theme: &Theme| {
+        let palette = tokens(mode);
+        let alpha = if done { 0.28 } else { 0.55 };
+        container::Style::default()
+            .color(palette.text_primary)
+            .background(with_alpha(palette.panel_raised, alpha))
+            .border(border(9.0, 1.0, with_alpha(palette.border, if done { 0.6 } else { 1.0 })))
+    }
+}
+
+/// A small rounded count pill for the mini header.
+pub fn mini_chip(mode: ThemeMode) -> impl Fn(&Theme) -> container::Style + Clone {
+    move |_theme: &Theme| {
+        let palette = tokens(mode);
+        container::Style::default()
+            .color(palette.text_primary)
+            .background(with_alpha(palette.accent, 0.16))
+            .border(border(8.0, 1.0, with_alpha(palette.accent, 0.4)))
+    }
+}
+
 pub fn panel_alt_container(mode: ThemeMode) -> impl Fn(&Theme) -> container::Style + Clone {
     move |_theme: &Theme| {
         let palette = tokens(mode);

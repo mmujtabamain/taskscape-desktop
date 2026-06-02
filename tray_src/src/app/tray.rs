@@ -18,13 +18,18 @@ use std::cell::{Cell, RefCell};
 #[cfg(target_os = "macos")]
 use tray_icon::{
     Icon, MouseButton, MouseButtonState, TrayIcon, TrayIconBuilder, TrayIconEvent,
+    menu::{Menu, MenuEvent, MenuItem, PredefinedMenuItem},
 };
+
+/// Stable id of the "Quit" context-menu item.
+#[cfg(target_os = "macos")]
+const QUIT_ITEM_ID: &str = "taskscape.tray.quit";
 
 /// Commands produced by interacting with the menu bar icon.
 #[derive(Debug, Clone, Copy)]
 pub enum TrayCommand {
-    /// Bring the main window to the foreground. Carries the icon's screen rect
-    /// (in physical pixels) so the mini window can be anchored beneath it.
+    /// Toggle the mini window. Carries the icon's screen rect (in physical
+    /// pixels) so the mini window can be anchored beneath it.
     ShowWindow {
         /// Top-left x of the menu bar icon, in physical pixels.
         icon_x: f64,
@@ -35,16 +40,21 @@ pub enum TrayCommand {
         /// Height of the menu bar icon, in physical pixels.
         icon_height: f64,
     },
+    /// The user chose "Quit" from the tray's right-click menu.
+    Quit,
 }
 
 #[cfg(target_os = "macos")]
 thread_local! {
     // The `TrayIcon` must stay alive for the icon to remain in the menu bar.
     static TRAY_HANDLE: RefCell<Option<TrayIcon>> = const { RefCell::new(None) };
+    // The `Menu` must also stay alive for the context menu to keep working.
+    static TRAY_MENU: RefCell<Option<Menu>> = const { RefCell::new(None) };
     static TRAY_INSTALLED: Cell<bool> = const { Cell::new(false) };
 }
 
-/// Installs the menu bar icon. Must be called on the main (UI) thread.
+/// Installs the menu bar icon and its right-click context menu (with Quit).
+/// Must be called on the main (UI) thread.
 #[cfg(target_os = "macos")]
 pub fn install() -> Result<(), String> {
     if TRAY_INSTALLED.with(Cell::get) {
@@ -53,15 +63,29 @@ pub fn install() -> Result<(), String> {
 
     let icon = build_icon()?;
 
+    // Right-click context menu: a header label, a separator, then Quit. Left
+    // click still toggles the mini window (`with_menu_on_left_click(false)`).
+    let menu = Menu::new();
+    let header = MenuItem::new("Taskscape", false, None);
+    let quit = MenuItem::with_id(QUIT_ITEM_ID, "Quit Taskscape", true, None);
+    menu.append(&header)
+        .and_then(|_| menu.append(&PredefinedMenuItem::separator()))
+        .and_then(|_| menu.append(&quit))
+        .map_err(|e| format!("failed to build tray menu: {e}"))?;
+
     let tray = TrayIconBuilder::new()
         .with_tooltip("Taskscape")
         // Template mode lets macOS tint the icon for light/dark menu bars.
         .with_icon_as_template(true)
         .with_icon(icon)
+        .with_menu(Box::new(menu.clone()))
+        // Keep left-click for toggling the window; the menu is right-click only.
+        .with_menu_on_left_click(false)
         .build()
         .map_err(|e| format!("failed to create tray icon: {e}"))?;
 
     TRAY_HANDLE.with(|slot| *slot.borrow_mut() = Some(tray));
+    TRAY_MENU.with(|slot| *slot.borrow_mut() = Some(menu));
     TRAY_INSTALLED.with(|flag| flag.set(true));
     Ok(())
 }
@@ -107,29 +131,50 @@ pub fn subscription() -> Subscription<TrayCommand> {
     Subscription::none()
 }
 
-/// Forwards tray events from the global receiver into an async stream without
-/// blocking the executor, mirroring the native menu plumbing.
+/// Forwards icon clicks and context-menu selections from their global receivers
+/// into one async stream, without blocking the executor.
 #[cfg(target_os = "macos")]
 fn tray_event_stream() -> impl iced::futures::Stream<Item = TrayCommand> {
     let (tx, rx) = mpsc::channel::<TrayCommand>(64);
 
-    if let Err(error) = std::thread::Builder::new()
-        .name("taskscape-tray-events".into())
-        .spawn(move || {
-            let mut tx = tx;
-            let receiver = TrayIconEvent::receiver();
-
-            while let Ok(event) = receiver.recv() {
-                if let Some(cmd) = map_event_to_command(&event) {
-                    if iced::futures::executor::block_on(tx.send(cmd)).is_err() {
-                        // The subscription stream was dropped.
-                        break;
+    // Icon click events.
+    {
+        let mut tx = tx.clone();
+        if let Err(error) = std::thread::Builder::new()
+            .name("taskscape-tray-events".into())
+            .spawn(move || {
+                let receiver = TrayIconEvent::receiver();
+                while let Ok(event) = receiver.recv() {
+                    if let Some(cmd) = map_event_to_command(&event) {
+                        if iced::futures::executor::block_on(tx.send(cmd)).is_err() {
+                            break; // subscription dropped
+                        }
                     }
                 }
-            }
-        })
+            })
+        {
+            eprintln!("Failed to spawn tray event thread: {error}");
+        }
+    }
+
+    // Context-menu selections (Quit).
     {
-        eprintln!("Failed to spawn tray event thread: {error}");
+        let mut tx = tx;
+        if let Err(error) = std::thread::Builder::new()
+            .name("taskscape-tray-menu".into())
+            .spawn(move || {
+                let receiver = MenuEvent::receiver();
+                while let Ok(event) = receiver.recv() {
+                    if event.id.0 == QUIT_ITEM_ID {
+                        if iced::futures::executor::block_on(tx.send(TrayCommand::Quit)).is_err() {
+                            break; // subscription dropped
+                        }
+                    }
+                }
+            })
+        {
+            eprintln!("Failed to spawn tray menu thread: {error}");
+        }
     }
 
     rx
