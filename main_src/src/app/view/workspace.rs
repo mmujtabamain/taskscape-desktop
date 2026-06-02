@@ -1,7 +1,7 @@
 use crate::app::{AppElement, Message, Taskscape};
 use common::models::Task;
 use common::thememanager::{empty_state_container, panel_alt_container, tokens};
-use common::widgets::{t_body, t_heading, t_icon_button};
+use common::widgets::{t_body, t_caption, t_heading, t_icon_button};
 use iced::Alignment;
 use iced::Length;
 use iced::widget::{Space, checkbox, column, container, row, scrollable};
@@ -14,18 +14,18 @@ impl Taskscape {
         if tasks.is_empty() {
             container(
                 column![
-                    t_heading("No tasks yet", 30.0, palette.text_primary),
+                    t_heading("No tasks yet", 22.0, palette.text_primary),
                     t_body(
-                        "Create a task or load a CSV todo file.",
-                        17.0,
-                        palette.text_secondary,
+                        "Add a task above to get started.",
+                        14.0,
+                        palette.text_muted,
                     ),
                 ]
-                .spacing(10)
+                .spacing(6)
                 .align_x(Alignment::Center),
             )
             .width(Length::Fill)
-            .height(Length::Fixed(280.0))
+            .height(Length::Fill)
             .center_x(Length::Fill)
             .center_y(Length::Fill)
             .style(empty_state_container(self.theme_mode))
@@ -33,7 +33,7 @@ impl Taskscape {
         } else {
             let list = tasks
                 .iter()
-                .fold(column![].spacing(12), |column, (index, task)| {
+                .fold(column![].spacing(6), |column, (index, task)| {
                     column.push(self.task_card(*index, task))
                 });
 
@@ -43,7 +43,7 @@ impl Taskscape {
                 .width(Length::Fill)
                 .height(Length::Fill)
                 .style(empty_state_container(self.theme_mode))
-                .padding(14)
+                .padding(8)
                 .into()
         }
     }
@@ -52,34 +52,31 @@ impl Taskscape {
         let palette = tokens(self.theme_mode);
 
         container(
-            column![
-                row![
-                    checkbox(task.completed)
-                        .on_toggle(move |completed| Message::ToggleTaskCompleted(index, completed))
-                        .size(18),
-                    column![
-                        t_heading(&task.title, 20.0, palette.text_primary),
-                        t_body(
-                            if task.completed { "Completed" } else { "Open" },
-                            14.0,
-                            palette.text_secondary,
-                        )
-                    ]
-                    .spacing(4),
-                    Space::new().width(Length::Fill),
-                    t_icon_button(
-                        self.theme_mode,
-                        lucide_icons::Icon::Trash2,
-                        None,
-                        Some(Message::RemoveTask(index)),
-                    ),
+            row![
+                checkbox(task.completed)
+                    .on_toggle(move |completed| Message::ToggleTaskCompleted(index, completed))
+                    .size(16),
+                column![
+                    t_body(&task.title, 15.0, palette.text_primary),
+                    t_caption(
+                        if task.completed { "Completed" } else { "Open" },
+                        12.0,
+                        palette.text_muted,
+                    )
                 ]
-                .align_y(Alignment::Center)
-                .spacing(12),
+                .spacing(1),
+                Space::new().width(Length::Fill),
+                t_icon_button(
+                    self.theme_mode,
+                    lucide_icons::Icon::Trash2,
+                    None,
+                    Some(Message::RemoveTask(index)),
+                ),
             ]
-            .spacing(12),
+            .align_y(Alignment::Center)
+            .spacing(10),
         )
-        .padding(16)
+        .padding([8, 10])
         .style(panel_alt_container(self.theme_mode))
         .into()
     }

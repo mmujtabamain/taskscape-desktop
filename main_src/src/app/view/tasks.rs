@@ -10,7 +10,7 @@ impl Taskscape {
     pub(crate) fn tasks_view(&self) -> AppElement<'_> {
         let mut content = column![self.header(), self.composer_row(),]
             .height(Length::Fill)
-            .spacing(16);
+            .spacing(10);
 
         content = content
             .push(self.task_list_panel())
@@ -37,7 +37,7 @@ impl Taskscape {
                 Some(Message::AddTask),
             ),
         ]
-        .spacing(10)
+        .spacing(8)
         .align_y(Alignment::Center)
         .into()
     }

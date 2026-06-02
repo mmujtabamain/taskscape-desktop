@@ -10,7 +10,8 @@ pub mod theme_mode;
 pub use button::button_style;
 pub use button_kind::ButtonKind;
 pub use container::{
-    empty_state_container, mini_shell_container, panel_alt_container, shell_container,
+    empty_state_container, list_row_container, mini_shell_container, panel_alt_container,
+    shell_container, sidebar_container,
 };
 pub use palette::{app_theme, tokens};
 pub use pick_list::pick_list_style;

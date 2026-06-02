@@ -7,7 +7,7 @@ use iced::{Color, Theme};
 fn radius_for_kind(kind: ButtonKind) -> f32 {
     match kind {
         ButtonKind::Primary | ButtonKind::Ghost => 14.0,
-        ButtonKind::Icon => 12.0,
+        ButtonKind::Icon | ButtonKind::Plain => 12.0,
     }
 }
 
@@ -34,6 +34,12 @@ fn active_style(mode: ThemeMode, kind: ButtonKind) -> button::Style {
             border: border(12.0, 1.0, palette.border),
             ..button::Style::default()
         },
+        ButtonKind::Plain => button::Style {
+            background: None,
+            text_color: palette.text_primary,
+            border: border(12.0, 0.0, Color::TRANSPARENT),
+            ..button::Style::default()
+        },
     }
 }
 
@@ -57,13 +63,20 @@ pub fn button_style(
                             Some(mix(palette.panel_raised, palette.panel_alt, 0.55).into());
                         style.border.color = palette.border_strong;
                     }
+                    // Borderless: only a faint fill so the row container shows
+                    // through, no border to avoid a redundant box.
+                    ButtonKind::Plain => {
+                        style.background = Some(with_alpha(palette.text_primary, 0.06).into());
+                    }
                 }
 
                 style
             }
             button::Status::Pressed => {
                 style.shadow = iced::Shadow::default();
-                style.border.color = palette.border_strong;
+                if !matches!(kind, ButtonKind::Plain) {
+                    style.border.color = palette.border_strong;
+                }
                 style
             }
             button::Status::Disabled => button::Style {

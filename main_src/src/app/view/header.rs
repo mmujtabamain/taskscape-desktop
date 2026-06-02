@@ -44,34 +44,34 @@ impl Taskscape {
                 Some(Message::EditRedo),
             ),
         ]
-        .spacing(10)
+        .spacing(6)
         .align_y(Alignment::Center);
 
         column![
             row![
                 {
                     let title_section = column![
-                        t_heading(list_name, 40.0, palette.text_primary),
+                        t_heading(list_name, 26.0, palette.text_primary),
                         t_body(
-                            format!("{} tasks in this list.", self.total_count()),
-                            15.0,
-                            palette.text_secondary,
+                            format!("{} tasks in this list", self.total_count()),
+                            13.0,
+                            palette.text_muted,
                         ),
                     ]
-                    .spacing(8)
+                    .spacing(2)
                     .width(Length::Fill);
 
                     container(title_section).width(Length::Fill)
                 },
                 controls,
             ]
-            .spacing(16)
-            .align_y(Alignment::Start),
+            .spacing(12)
+            .align_y(Alignment::Center),
             container(Space::new().height(Length::Fixed(1.0)))
                 .width(Length::Fill)
                 .style(panel_alt_container(self.theme_mode)),
         ]
-        .spacing(18)
+        .spacing(10)
         .into()
     }
 }

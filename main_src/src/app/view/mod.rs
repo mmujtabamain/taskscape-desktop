@@ -16,18 +16,14 @@ impl Taskscape {
         let main_column = column![self.workspace_or_prompt(), self.status_bar()]
             .width(Length::Fill)
             .height(Length::Fill)
-            .spacing(14)
-            .padding(14);
+            .spacing(10)
+            .padding(12);
 
-        // Optionally show the list sidebar to the left of the main column.
-        let body: AppElement<'_> = if self.show_list_panel {
-            row![self.list_panel(), main_column]
-                .spacing(0)
-                .height(Length::Fill)
-                .into()
-        } else {
-            main_column.into()
-        };
+        // The sidebar is always present — a compact rail when collapsed, the
+        // full panel when expanded.
+        let body = row![self.list_sidebar(), main_column]
+            .spacing(0)
+            .height(Length::Fill);
 
         container(body)
             .width(Length::Fill)
@@ -83,9 +79,9 @@ impl Taskscape {
             .align_y(Alignment::Center),
         )
         .width(Length::Fill)
-        .height(Length::Fixed(34.0))
+        .height(Length::Fixed(30.0))
         .align_y(Alignment::Center)
-        .padding([0, 14])
+        .padding([0, 12])
         .style(panel_alt_container(self.theme_mode))
         .into()
     }
