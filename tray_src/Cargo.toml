@@ -16,7 +16,9 @@ tray-icon = "0.24.0"
 global-hotkey = "0.8"
 
 [target.'cfg(target_os = "macos")'.dependencies]
-# Used to read the main display's backing scale factor so the mini window can
-# be anchored beneath the (physical-pixel) menu bar icon rect in logical points.
-objc2-app-kit = { version = "0.3", features = ["NSScreen"] }
+# `NSScreen`: read the main display's backing scale factor to anchor the mini
+# window under the (physical-pixel) menu-bar icon rect.
+# `NSView`/`NSWindow`: disable the mini window's drop shadow so its transparent
+# rounded corners don't sit inside a square shadow outline.
+objc2-app-kit = { version = "0.3", features = ["NSScreen", "NSView", "NSWindow", "NSResponder"] }
 objc2-foundation = "0.3"

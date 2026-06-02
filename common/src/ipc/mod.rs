@@ -32,15 +32,23 @@ pub fn socket_path() -> PathBuf {
 /// the bulk source-of-truth handshake plus add / remove / toggle mutations.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum IpcMessage {
-    /// Sent by the **main app** right after connecting: its full task list, which
-    /// the tray service adopts wholesale (main app is the source of truth).
-    Hello { tasks: Vec<Task> },
+    /// Sent by the **main app** right after connecting (and on every list switch):
+    /// the open list's display name and its full task list, which the tray adopts
+    /// wholesale (the main app is the source of truth). `list_name` is `None` when
+    /// no list is open.
+    Hello {
+        list_name: Option<String>,
+        tasks: Vec<Task>,
+    },
     /// A task was added with this title (appended to the end of the list).
     AddTask { title: String },
     /// The task at `index` was removed.
     RemoveTask { index: usize },
     /// The task at `index` had its completed flag set to `completed`.
     ToggleTaskCompleted { index: usize, completed: bool },
+    /// Sent by the **tray** to ask the main app to come forward and open its list
+    /// sidebar (so the user can change the current list).
+    ShowMain,
     /// Graceful "I'm closing / unlinking" notice. A plain socket EOF is treated
     /// the same way, so this is best-effort.
     Bye,

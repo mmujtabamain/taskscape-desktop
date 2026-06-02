@@ -44,8 +44,17 @@ impl TrayApp {
                 }
             }
             Message::WindowOpened(window_id) => {
-                if self.mini_window_id == Some(window_id) {
-                    return Task::none();
+                // The mini window and the confirm popover are both transparent +
+                // rounded: strip their square drop shadow so the corners aren't
+                // framed by it. Must run on the UI thread; window::run guarantees
+                // that. (Discard the unit result.)
+                if self.mini_window_id == Some(window_id)
+                    || self.confirm_window_id == Some(window_id)
+                {
+                    return window::run(window_id, |window| {
+                        crate::app::tray::disable_window_shadow(window);
+                    })
+                    .discard();
                 }
                 // This is the hidden bootstrap window: install the tray icon and
                 // global hotkey on the UI thread, then close it. The daemon keeps
@@ -62,15 +71,20 @@ impl TrayApp {
             Message::WindowClosed(window_id) => {
                 if self.mini_window_id == Some(window_id) {
                     self.mini_window_id = None;
+                } else if self.confirm_window_id == Some(window_id) {
+                    self.confirm_window_id = None;
                 } else if self.bootstrap_window_id == Some(window_id) {
                     self.bootstrap_window_id = None;
                 }
             }
             Message::WindowCloseRequested(id) => {
-                // The mini window simply closes and forgets its id; clicking the
-                // tray icon (or the hotkey) re-opens it.
+                // The mini window and the confirm popover just close.
                 if self.mini_window_id == Some(id) {
                     self.mini_window_id = None;
+                    return window::close(id);
+                }
+                if self.confirm_window_id == Some(id) {
+                    self.confirm_window_id = None;
                     return window::close(id);
                 }
             }
@@ -89,9 +103,25 @@ impl TrayApp {
                     };
                     return self.toggle_mini_window(Some(anchor));
                 }
-                TrayCommand::Quit => return self.quit(),
+                TrayCommand::Quit => return self.open_quit_confirm(),
             },
-            Message::QuitRequested => return self.quit(),
+            Message::QuitRequested => return self.open_quit_confirm(),
+            Message::ConfirmQuit => return self.quit(),
+            Message::CancelQuit => {
+                if let Some(id) = self.confirm_window_id.take() {
+                    return window::close(id);
+                }
+            }
+            Message::ShowMainRequested => {
+                if self.ipc_connected {
+                    // Main app is running: ask it to come forward + open sidebar.
+                    common::ipc::server::send(&common::ipc::IpcMessage::ShowMain);
+                } else {
+                    // Main app is closed: launch it; send ShowMain once it links.
+                    self.pending_show_main = true;
+                    crate::app::launch::launch_main();
+                }
+            }
             Message::TrayInstalled(result) => {
                 if let Err(error) = result {
                     self.status_message = format!("Menu bar icon: {error}");
@@ -112,18 +142,30 @@ impl TrayApp {
             Message::KeyboardEvent(event) => {
                 if let keyboard::Event::KeyPressed { key, .. } = event {
                     use iced::keyboard::Key;
-                    // Esc closes the mini window if it is open.
-                    if let (Key::Named(iced::keyboard::key::Named::Escape), Some(id)) =
-                        (key.as_ref(), self.mini_window_id)
-                    {
-                        self.mini_window_id = None;
-                        return window::close(id);
+                    if matches!(key.as_ref(), Key::Named(iced::keyboard::key::Named::Escape)) {
+                        // Esc dismisses the quit popover, else closes the mini window.
+                        if let Some(id) = self.confirm_window_id.take() {
+                            return window::close(id);
+                        }
+                        if let Some(id) = self.mini_window_id.take() {
+                            return window::close(id);
+                        }
                     }
                 }
             }
         }
 
         Task::none()
+    }
+
+    /// Opens the quit-confirmation popover window (or focuses it if already up).
+    fn open_quit_confirm(&mut self) -> AppTask {
+        if let Some(id) = self.confirm_window_id {
+            return window::gain_focus(id);
+        }
+        let (id, open) = window::open(Self::confirm_window_settings());
+        self.confirm_window_id = Some(id);
+        Task::batch([open.map(Message::WindowOpened), window::gain_focus(id)])
     }
 
     /// Quits the tray service. Tells the main app we're going (best-effort) so it

@@ -23,6 +23,12 @@ impl TrayApp {
             IpcInbound::Connected => {
                 self.ipc_connected = true;
                 self.status_message = String::from("Linked to Taskscape.");
+                // If the user clicked the title while the main app was closed, we
+                // launched it; now that it's linked, ask it to come forward.
+                if self.pending_show_main {
+                    self.pending_show_main = false;
+                    ipc::server::send(&IpcMessage::ShowMain);
+                }
             }
             IpcInbound::Disconnected => {
                 self.ipc_connected = false;
@@ -39,8 +45,9 @@ impl TrayApp {
         self.applying_remote = true;
 
         match message {
-            // Source-of-truth bulk sync: adopt the main app's list wholesale.
-            IpcMessage::Hello { tasks } => {
+            // Source-of-truth bulk sync: adopt the main app's list + name.
+            IpcMessage::Hello { list_name, tasks } => {
+                self.current_list = list_name;
                 self.tasks.replace(tasks);
                 self.status_message = String::from("Synced from Taskscape.");
             }
@@ -53,7 +60,8 @@ impl TrayApp {
             IpcMessage::ToggleTaskCompleted { index, completed } => {
                 self.tasks.set_completed(index, completed);
             }
-            IpcMessage::Bye => {}
+            // The tray never receives ShowMain (it's tray→main only).
+            IpcMessage::ShowMain | IpcMessage::Bye => {}
         }
 
         self.applying_remote = false;

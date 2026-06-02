@@ -17,13 +17,14 @@ impl Taskscape {
         ipc::client::send(&message);
     }
 
-    /// Pushes the whole current task list to the tray service so the mini window
+    /// Pushes the open list's name and tasks to the tray so the mini window
     /// follows a list switch. No-op when not linked.
     pub(crate) fn resync_tray(&self) {
         if !self.ipc_connected {
             return;
         }
         ipc::client::send(&IpcMessage::Hello {
+            list_name: self.current_list.clone(),
             tasks: self.tasks.to_vec(),
         });
     }
@@ -33,8 +34,9 @@ impl Taskscape {
         match event {
             IpcInbound::Connected => {
                 self.ipc_connected = true;
-                // Main app is the source of truth: push the full list.
+                // Main app is the source of truth: push the open list + tasks.
                 ipc::client::send(&IpcMessage::Hello {
+                    list_name: self.current_list.clone(),
                     tasks: self.tasks.to_vec(),
                 });
                 self.status_message = String::from("Linked to mini service.");
@@ -43,15 +45,16 @@ impl Taskscape {
                 self.ipc_connected = false;
                 self.status_message = String::from("Mini service offline — running standalone.");
             }
-            IpcInbound::Message(message) => self.apply_remote(message),
+            IpcInbound::Message(message) => return self.apply_remote(message),
         }
         iced::Task::none()
     }
 
-    /// Applies a mutation received from the tray service. The `applying_remote`
-    /// guard stops the change from being broadcast straight back.
-    fn apply_remote(&mut self, message: IpcMessage) {
+    /// Applies a message received from the tray. The `applying_remote` guard
+    /// stops mutations from being broadcast straight back.
+    fn apply_remote(&mut self, message: IpcMessage) -> AppTask {
         self.applying_remote = true;
+        let mut task = iced::Task::none();
 
         match message {
             IpcMessage::AddTask { title } => self.add_task_with_title(title),
@@ -59,11 +62,23 @@ impl Taskscape {
             IpcMessage::ToggleTaskCompleted { index, completed } => {
                 self.toggle_task_completed(index, completed)
             }
+            // The tray asks us to come forward and open the list sidebar so the
+            // user can switch lists.
+            IpcMessage::ShowMain => {
+                self.show_list_panel = true;
+                if let Some(id) = self.window_id {
+                    task = iced::Task::batch([
+                        iced::window::gain_focus(id),
+                        iced::window::minimize(id, false),
+                    ]);
+                }
+            }
             // The main app is the source of truth, so it never adopts a peer's
             // `Hello`; a `Bye` is handled by the transport's disconnect.
             IpcMessage::Hello { .. } | IpcMessage::Bye => {}
         }
 
         self.applying_remote = false;
+        task
     }
 }

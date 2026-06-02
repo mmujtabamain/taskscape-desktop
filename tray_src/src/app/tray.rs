@@ -112,6 +112,38 @@ pub fn main_screen_scale() -> f64 {
     1.0
 }
 
+/// Disables the drop shadow of the window backing `handle`. macOS draws the
+/// shadow on the (square) window frame, which appears as a square outline behind
+/// the mini window's transparent rounded corners; turning it off removes that.
+/// Must run on the UI thread (call inside `window::run`).
+#[cfg(target_os = "macos")]
+pub fn disable_window_shadow(handle: &dyn iced::window::raw_window_handle::HasWindowHandle) {
+    use iced::window::raw_window_handle::RawWindowHandle;
+    use objc2_app_kit::NSView;
+
+    let Ok(window_handle) = handle.window_handle() else {
+        return;
+    };
+    if let RawWindowHandle::AppKit(appkit) = window_handle.as_raw() {
+        // SAFETY: we're on the UI thread (window::run guarantees it) and the view
+        // pointer is valid for the lifetime of this call.
+        unsafe {
+            let view: &NSView = appkit.ns_view.cast().as_ref();
+            if let Some(window) = view.window() {
+                window.setHasShadow(false);
+                // Nudge AppKit to recompute the shadow region immediately.
+                window.invalidateShadow();
+            }
+        }
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+pub fn disable_window_shadow(
+    _handle: &dyn iced::window::raw_window_handle::HasWindowHandle,
+) {
+}
+
 #[cfg(not(target_os = "macos"))]
 pub fn install() -> Result<(), String> {
     // TODO: Windows (Shell_NotifyIcon) and Linux (StatusNotifierItem/GTK).
