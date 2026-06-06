@@ -1,5 +1,6 @@
 mod header;
 mod lists;
+mod settings;
 mod tasks;
 mod workspace;
 
@@ -32,16 +33,19 @@ impl Taskscape {
             .height(Length::Fill)
             .style(shell_container(self.theme_mode));
 
-        // Overlay the rename modal on top when a rename is in progress.
-        match self.rename_modal() {
+        // Overlay a modal (rename, or the Clear-all confirmation) when one is up.
+        match self.rename_modal().or_else(|| self.clear_all_modal()) {
             Some(modal) => stack![shell, modal].into(),
             None => shell.into(),
         }
     }
 
-    /// The task workspace when a list is open, else the empty-state prompt.
+    /// The main content area: settings when open, else the task workspace, else
+    /// the empty-state prompt.
     fn workspace_or_prompt(&self) -> AppElement<'_> {
-        if self.current_list.is_some() {
+        if self.show_settings {
+            self.settings_view()
+        } else if self.current_list.is_some() {
             self.tasks_view()
         } else {
             self.empty_state_prompt()

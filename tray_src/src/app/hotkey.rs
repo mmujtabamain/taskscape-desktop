@@ -2,7 +2,9 @@
 //!
 //! Uses the `global-hotkey` crate (same maintainer/event model as `tray-icon`)
 //! to register a system-wide hotkey that fires even when Taskscape is not the
-//! focused application. The binding is Option/Alt+` on every platform.
+//! focused application. The binding is read from the saved config (defaulting to
+//! Option/Alt+`) and can be changed live from the main app's settings via
+//! [`apply`].
 //!
 //! This mirrors `tray.rs`: the manager must be kept alive for the hotkey to stay
 //! registered, so we stash it in thread-local storage, and a subscription
@@ -12,11 +14,13 @@ use iced::Subscription;
 use iced::futures::channel::mpsc;
 use iced::futures::sink::SinkExt;
 
+use common::hotkey::HotkeySpec;
 use global_hotkey::{
     GlobalHotKeyEvent, GlobalHotKeyManager, HotKeyState,
-    hotkey::{Code, HotKey, Modifiers},
+    hotkey::HotKey,
 };
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
+use std::str::FromStr;
 
 /// Commands produced by the global hotkey.
 #[derive(Debug, Clone, Copy)]
@@ -25,33 +29,88 @@ pub enum HotkeyCommand {
     ToggleMini,
 }
 
-/// The mini-window toggle: Option/Alt+` (the backtick / `~` key).
-fn mini_toggle_hotkey() -> HotKey {
-    HotKey::new(Some(Modifiers::ALT), Code::Backquote)
-}
-
 thread_local! {
     // The manager must stay alive for the hotkey to remain registered.
     static HOTKEY_MANAGER: RefCell<Option<GlobalHotKeyManager>> = const { RefCell::new(None) };
-    static HOTKEY_INSTALLED: Cell<bool> = const { Cell::new(false) };
+    // The currently-registered hotkey, so we can unregister it before swapping in
+    // a new one. `None` means nothing is registered (manager absent or disabled).
+    static CURRENT_HOTKEY: RefCell<Option<HotKey>> = const { RefCell::new(None) };
 }
 
-/// Registers the global hotkey. Must be called on the main (UI) thread.
-pub fn install() -> Result<(), String> {
-    if HOTKEY_INSTALLED.with(Cell::get) {
-        return Ok(());
+/// Builds a `global-hotkey` `HotKey` from our serializable spec by composing the
+/// `"Mod+Mod+Key"` string the crate's parser understands (its key names match the
+/// W3C `code` names we store).
+fn to_hotkey(spec: &HotkeySpec) -> Result<HotKey, String> {
+    let mut parts: Vec<&str> = Vec::new();
+    if spec.alt {
+        parts.push("Alt");
     }
+    if spec.ctrl {
+        parts.push("Control");
+    }
+    if spec.shift {
+        parts.push("Shift");
+    }
+    if spec.meta {
+        parts.push("Super");
+    }
+    parts.push(&spec.code);
+    HotKey::from_str(&parts.join("+")).map_err(|e| format!("invalid hotkey: {e}"))
+}
 
-    let manager = GlobalHotKeyManager::new()
-        .map_err(|e| format!("failed to create hotkey manager: {e}"))?;
+/// Reads the saved hotkey binding + enabled flag from the config, falling back to
+/// the built-in default.
+fn configured() -> (HotkeySpec, bool) {
+    let config = common::storage::load_config();
+    let spec = config.hotkey.unwrap_or_else(HotkeySpec::default_mini_toggle);
+    (spec, config.hotkey_enabled)
+}
 
-    manager
-        .register(mini_toggle_hotkey())
-        .map_err(|e| format!("failed to register hotkey: {e}"))?;
+/// Registers the configured global hotkey. Must be called on the main (UI) thread.
+pub fn install() -> Result<(), String> {
+    HOTKEY_MANAGER.with(|slot| {
+        if slot.borrow().is_none() {
+            let manager = GlobalHotKeyManager::new()
+                .map_err(|e| format!("failed to create hotkey manager: {e}"))?;
+            *slot.borrow_mut() = Some(manager);
+        }
+        Ok::<(), String>(())
+    })?;
 
-    HOTKEY_MANAGER.with(|slot| *slot.borrow_mut() = Some(manager));
-    HOTKEY_INSTALLED.with(|flag| flag.set(true));
-    Ok(())
+    let (spec, enabled) = configured();
+    apply(Some(spec), enabled)
+}
+
+/// Swaps the registered hotkey to `spec` (or unregisters when `enabled` is false
+/// or `spec` is `None`). Must run on the same (UI) thread that owns the manager,
+/// i.e. the `update` loop. Best-effort and idempotent.
+pub fn apply(spec: Option<HotkeySpec>, enabled: bool) -> Result<(), String> {
+    HOTKEY_MANAGER.with(|slot| {
+        let guard = slot.borrow();
+        let Some(manager) = guard.as_ref() else {
+            // No manager yet (install() hasn't run): nothing to do.
+            return Ok(());
+        };
+
+        // Drop whatever is currently bound.
+        CURRENT_HOTKEY.with(|cur| {
+            if let Some(existing) = cur.borrow_mut().take() {
+                let _ = manager.unregister(existing);
+            }
+        });
+
+        if !enabled {
+            return Ok(());
+        }
+
+        let spec = spec.unwrap_or_else(HotkeySpec::default_mini_toggle);
+        let hotkey = to_hotkey(&spec)?;
+        manager
+            .register(hotkey)
+            .map_err(|e| format!("failed to register hotkey: {e}"))?;
+        CURRENT_HOTKEY.with(|cur| *cur.borrow_mut() = Some(hotkey));
+        Ok(())
+    })
 }
 
 /// Subscription that delivers global hotkey presses as [`HotkeyCommand`]s.
@@ -60,7 +119,9 @@ pub fn subscription() -> Subscription<HotkeyCommand> {
 }
 
 /// Forwards hotkey events from the global receiver into an async stream without
-/// blocking the executor, mirroring the tray plumbing.
+/// blocking the executor, mirroring the tray plumbing. We only ever register one
+/// hotkey at a time in this process, so *any* press the receiver sees is ours —
+/// no id filtering, which keeps this correct across live re-registration.
 fn hotkey_event_stream() -> impl iced::futures::Stream<Item = HotkeyCommand> {
     let (tx, rx) = mpsc::channel::<HotkeyCommand>(64);
 
@@ -69,13 +130,9 @@ fn hotkey_event_stream() -> impl iced::futures::Stream<Item = HotkeyCommand> {
         .spawn(move || {
             let mut tx = tx;
             let receiver = GlobalHotKeyEvent::receiver();
-            // Recomputed (not read from thread-local state) because this runs on
-            // a separate thread; the id is deterministic from mods + key.
-            let mini_id = mini_toggle_hotkey().id();
 
             while let Ok(event) = receiver.recv() {
-                // Fire once, on press, for our registered hotkey only.
-                if event.state == HotKeyState::Pressed && event.id == mini_id {
+                if event.state == HotKeyState::Pressed {
                     if iced::futures::executor::block_on(tx.send(HotkeyCommand::ToggleMini)).is_err()
                     {
                         // The subscription stream was dropped.

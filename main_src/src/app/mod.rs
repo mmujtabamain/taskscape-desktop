@@ -9,6 +9,7 @@ mod sync;
 mod update;
 mod view;
 
+use common::hotkey::HotkeySpec;
 use common::storage::ListEntry;
 use common::tasklist::TaskList;
 use common::thememanager::{ThemeMode, app_theme};
@@ -30,9 +31,34 @@ pub enum Message {
     RemoveTask(usize),
     AddTask,
     ClearCompleted,
+    /// Entry point for "Clear all": either clears immediately or opens the
+    /// confirmation modal, depending on the `confirm_clear_all` setting.
+    RequestClearAll,
+    /// Actually clear every task (the confirmed action).
     ClearAll,
+    /// Dismiss the "Clear all" confirmation modal without clearing.
+    CancelClearAll,
     EditUndo,
     EditRedo,
+    // --- Settings ---
+    /// Toggle the settings page (which replaces the task workspace).
+    ToggleSettings,
+    /// Leave the settings page, back to the tasks.
+    CloseSettings,
+    /// Choose the theme from the settings selector.
+    SetTheme(ThemeMode),
+    /// Toggle "reopen last list on launch".
+    SetReopenLastList(bool),
+    /// Toggle "confirm before Clear all".
+    SetConfirmClearAll(bool),
+    /// Enable/disable the mini-window global hotkey.
+    SetHotkeyEnabled(bool),
+    /// Begin live-capturing a new mini-window hotkey (the next key combo wins).
+    StartRecordHotkey,
+    /// Stop capturing without changing the hotkey.
+    CancelRecordHotkey,
+    /// Restore the built-in default mini-window hotkey.
+    ResetHotkey,
     // --- Task-list management ---
     /// Show/hide the list sidebar.
     ToggleListPanel,
@@ -90,6 +116,20 @@ pub struct Taskscape {
     pub(crate) renaming: Option<(String, String)>,
     /// Whether the list sidebar is visible.
     pub(crate) show_list_panel: bool,
+    /// Whether the settings page is showing in place of the task workspace.
+    pub(crate) show_settings: bool,
+    /// Whether we are live-capturing a new mini-window hotkey.
+    pub(crate) recording_hotkey: bool,
+    /// Whether the "Clear all" confirmation modal is open.
+    pub(crate) confirming_clear_all: bool,
+    /// Reopen the last-used list on launch (persisted setting).
+    pub(crate) reopen_last_list: bool,
+    /// Ask before the destructive "Clear all" (persisted setting).
+    pub(crate) confirm_clear_all: bool,
+    /// Whether the mini-window global hotkey is enabled (persisted setting).
+    pub(crate) hotkey_enabled: bool,
+    /// The mini-window global hotkey (persisted setting; registered by the tray).
+    pub(crate) hotkey: HotkeySpec,
     /// Whether the tray service is currently linked over IPC.
     pub(crate) ipc_connected: bool,
     /// Set while applying a mutation received from the tray service, so the same
@@ -112,6 +152,13 @@ impl Default for Taskscape {
             new_list_name: String::new(),
             renaming: None,
             show_list_panel: false,
+            show_settings: false,
+            recording_hotkey: false,
+            confirming_clear_all: false,
+            reopen_last_list: true,
+            confirm_clear_all: true,
+            hotkey_enabled: true,
+            hotkey: HotkeySpec::default_mini_toggle(),
             ipc_connected: false,
             applying_remote: false,
         }
@@ -137,12 +184,27 @@ impl Taskscape {
             iced::font::load(lucide_icons::LUCIDE_FONT_BYTES).map(|_| Message::FontLoaded),
         ]);
 
-        // Populate the sidebar and reopen the last-used list (if it still exists).
+        // Populate the sidebar and restore saved settings.
         let mut state = Self::default();
         state.lists = common::storage::list_all();
-        if let Some(last) = common::storage::load_config().last_open {
-            if state.lists.iter().any(|e| e.name == last) {
-                state.open_list_quiet(&last);
+
+        let config = common::storage::load_config();
+        if let Some(theme) = config.theme {
+            state.theme_mode = theme;
+        }
+        state.reopen_last_list = config.reopen_last_list;
+        state.confirm_clear_all = config.confirm_clear_all;
+        state.hotkey_enabled = config.hotkey_enabled;
+        if let Some(hotkey) = config.hotkey {
+            state.hotkey = hotkey;
+        }
+
+        // Reopen the last-used list (if enabled and it still exists).
+        if state.reopen_last_list {
+            if let Some(last) = config.last_open {
+                if state.lists.iter().any(|e| e.name == last) {
+                    state.open_list_quiet(&last);
+                }
             }
         }
         if state.current_list.is_none() {

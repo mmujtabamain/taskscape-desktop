@@ -1,4 +1,6 @@
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub enum ThemeMode {
     #[default]
     Dark,
@@ -6,6 +8,9 @@ pub enum ThemeMode {
 }
 
 impl ThemeMode {
+    /// Both modes, in selector order.
+    pub const ALL: [ThemeMode; 2] = [ThemeMode::Dark, ThemeMode::Light];
+
     pub fn toggled(self) -> Self {
         match self {
             Self::Dark => Self::Light,
@@ -18,5 +23,11 @@ impl ThemeMode {
             Self::Dark => "Dark mode",
             Self::Light => "Light mode",
         }
+    }
+}
+
+impl std::fmt::Display for ThemeMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.label())
     }
 }

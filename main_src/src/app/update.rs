@@ -10,6 +10,7 @@ impl Taskscape {
             Message::ToggleTheme => {
                 self.theme_mode = self.theme_mode.toggled();
                 self.status_message = format!("Switched to {}.", self.theme_mode.label());
+                self.persist_settings();
             }
             Message::TitleChanged(value) => self.title_input = value,
             Message::ToggleTaskCompleted(index, completed) => {
@@ -29,10 +30,20 @@ impl Taskscape {
                 self.clear_completed();
                 self.resync_tray();
             }
+            Message::RequestClearAll => {
+                if self.confirm_clear_all {
+                    self.confirming_clear_all = true;
+                } else {
+                    self.clear_all();
+                    self.resync_tray();
+                }
+            }
             Message::ClearAll => {
+                self.confirming_clear_all = false;
                 self.clear_all();
                 self.resync_tray();
             }
+            Message::CancelClearAll => self.confirming_clear_all = false,
             Message::EditUndo => {
                 self.undo();
                 self.resync_tray();
@@ -41,14 +52,62 @@ impl Taskscape {
                 self.redo();
                 self.resync_tray();
             }
+            // --- Settings ---
+            Message::ToggleSettings => {
+                self.show_settings = !self.show_settings;
+                if !self.show_settings {
+                    self.recording_hotkey = false;
+                }
+            }
+            Message::CloseSettings => self.leave_settings(),
+            Message::SetTheme(mode) => {
+                self.theme_mode = mode;
+                self.status_message = format!("Switched to {}.", mode.label());
+                self.persist_settings();
+            }
+            Message::SetReopenLastList(on) => {
+                self.reopen_last_list = on;
+                self.persist_settings();
+            }
+            Message::SetConfirmClearAll(on) => {
+                self.confirm_clear_all = on;
+                self.persist_settings();
+            }
+            Message::SetHotkeyEnabled(on) => {
+                self.hotkey_enabled = on;
+                self.persist_settings();
+                self.send_hotkey_config();
+                self.status_message = if on {
+                    String::from("Mini-window hotkey enabled.")
+                } else {
+                    String::from("Mini-window hotkey disabled.")
+                };
+            }
+            Message::StartRecordHotkey => {
+                self.recording_hotkey = true;
+                self.status_message = String::from("Press the new shortcut… (Esc to cancel)");
+            }
+            Message::CancelRecordHotkey => {
+                self.recording_hotkey = false;
+                self.status_message = String::from("Shortcut unchanged.");
+            }
+            Message::ResetHotkey => {
+                self.recording_hotkey = false;
+                self.hotkey = common::hotkey::HotkeySpec::default_mini_toggle();
+                self.persist_settings();
+                self.send_hotkey_config();
+                self.status_message = format!("Shortcut reset to {}.", self.hotkey.label());
+            }
             // --- List management ---
             Message::ToggleListPanel => self.show_list_panel = !self.show_list_panel,
             Message::OpenList(name) => {
+                self.leave_settings();
                 self.open_list(&name);
                 self.resync_tray();
             }
             Message::NewListNameChanged(value) => self.new_list_name = value,
             Message::CreateList => {
+                self.leave_settings();
                 self.create_list();
                 self.resync_tray();
             }
@@ -129,6 +188,12 @@ impl Taskscape {
             }
             Message::IpcEvent(event) => return self.handle_ipc(event),
             Message::KeyboardEvent(event) => {
+                // While capturing a new hotkey, the keyboard belongs to the
+                // recorder — no app shortcuts fire.
+                if self.recording_hotkey {
+                    self.capture_hotkey(&event);
+                    return Task::none();
+                }
                 if let keyboard::Event::KeyPressed { key, modifiers, .. } = event {
                     use iced::keyboard::Key;
 
@@ -157,11 +222,20 @@ impl Taskscape {
                             self.theme_mode = self.theme_mode.toggled();
                             self.status_message =
                                 format!("Switched to {}.", self.theme_mode.label());
+                            self.persist_settings();
                         }
                         Key::Named(iced::keyboard::key::Named::Escape)
                             if self.renaming.is_some() =>
                         {
                             self.renaming = None;
+                        }
+                        Key::Named(iced::keyboard::key::Named::Escape)
+                            if self.confirming_clear_all =>
+                        {
+                            self.confirming_clear_all = false;
+                        }
+                        Key::Named(iced::keyboard::key::Named::Escape) if self.show_settings => {
+                            self.leave_settings();
                         }
                         _ => {}
                     }
@@ -232,5 +306,71 @@ impl Taskscape {
 
         let _ = (key, modifiers);
         None
+    }
+
+    /// Consumes a key event while the settings page is recording a new
+    /// mini-window hotkey. Holds for modifier-only presses, rejects keys that
+    /// can't be bound, and commits a valid combo (persisting + syncing to the
+    /// tray). Esc cancels.
+    fn capture_hotkey(&mut self, event: &keyboard::Event) {
+        use iced::keyboard::key::{Named, Physical};
+        use iced::keyboard::Key;
+
+        let keyboard::Event::KeyPressed {
+            physical_key,
+            modifiers,
+            key,
+            ..
+        } = event
+        else {
+            return;
+        };
+
+        // Esc on its own cancels recording.
+        if matches!(key.as_ref(), Key::Named(Named::Escape))
+            && !modifiers.alt()
+            && !modifiers.control()
+            && !modifiers.logo()
+        {
+            self.recording_hotkey = false;
+            self.status_message = String::from("Shortcut unchanged.");
+            return;
+        }
+
+        // The physical code maps directly to a W3C `code` name via its Debug form
+        // (e.g. `Backquote`, `KeyK`), which is what we store and the tray parses.
+        let code = match physical_key {
+            Physical::Code(code) => *code,
+            Physical::Unidentified(_) => return, // keep waiting
+        };
+        let code_name = format!("{code:?}");
+
+        // Still only holding modifiers — wait for the actual key.
+        if common::hotkey::is_modifier_code(&code_name) {
+            return;
+        }
+
+        let spec = common::hotkey::HotkeySpec {
+            alt: modifiers.alt(),
+            ctrl: modifiers.control(),
+            shift: modifiers.shift(),
+            meta: modifiers.logo(),
+            code: code_name,
+        };
+
+        if common::hotkey::key_code_label(&spec.code).is_none() {
+            self.status_message = String::from("That key can't be used — try another.");
+            return; // keep recording
+        }
+        if !spec.has_strong_modifier() {
+            self.status_message = String::from("Hold ⌘, ⌥, or ⌃ with the key.");
+            return; // keep recording
+        }
+
+        self.hotkey = spec;
+        self.recording_hotkey = false;
+        self.persist_settings();
+        self.send_hotkey_config();
+        self.status_message = format!("Shortcut set to {}.", self.hotkey.label());
     }
 }

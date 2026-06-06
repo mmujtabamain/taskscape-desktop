@@ -60,6 +60,16 @@ impl TrayApp {
             IpcMessage::ToggleTaskCompleted { index, completed } => {
                 self.tasks.set_completed(index, completed);
             }
+            // The main app changed the mini-window hotkey in settings: re-register
+            // it live. Runs on the UI thread (update → handle_ipc), which is where
+            // the hotkey manager lives.
+            IpcMessage::SetHotkey { hotkey, enabled } => {
+                self.status_message = match crate::app::hotkey::apply(hotkey, enabled) {
+                    Ok(()) if enabled => String::from("Hotkey updated."),
+                    Ok(()) => String::from("Hotkey disabled."),
+                    Err(error) => format!("Hotkey: {error}"),
+                };
+            }
             // The tray never receives these (they are tray→main only).
             IpcMessage::ShowMain | IpcMessage::Shutdown | IpcMessage::Bye => {}
         }

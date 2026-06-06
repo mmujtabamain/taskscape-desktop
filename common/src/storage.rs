@@ -8,7 +8,9 @@
 //! A small [`Config`] (`config.json`) remembers the last-opened list so the app
 //! can reopen it on the next launch.
 
+use crate::hotkey::HotkeySpec;
 use crate::models::Task;
+use crate::thememanager::ThemeMode;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
@@ -28,12 +30,37 @@ pub struct ListEntry {
     pub task_count: usize,
 }
 
-/// Persisted app configuration.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+/// Persisted app configuration. `#[serde(default)]` lets older config files (and
+/// future ones missing a field) fall back to [`Config::default`], so adding a
+/// setting never breaks an existing install.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Config {
     /// Display name of the list to reopen on launch, if any.
-    #[serde(default)]
     pub last_open: Option<String>,
+    /// Preferred theme; `None` until the user has chosen one.
+    pub theme: Option<ThemeMode>,
+    /// Reopen the last-used list on launch.
+    pub reopen_last_list: bool,
+    /// Ask for confirmation before the "Clear all" action.
+    pub confirm_clear_all: bool,
+    /// Whether the mini-window global hotkey is registered at all.
+    pub hotkey_enabled: bool,
+    /// The mini-window global hotkey; `None` means use the built-in default.
+    pub hotkey: Option<HotkeySpec>,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            last_open: None,
+            theme: None,
+            reopen_last_list: true,
+            confirm_clear_all: true,
+            hotkey_enabled: true,
+            hotkey: None,
+        }
+    }
 }
 
 /// The app-data root, created if missing. Falls back to the current directory

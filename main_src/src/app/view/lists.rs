@@ -112,6 +112,7 @@ impl Taskscape {
         ]
         .spacing(RAIL_GAP)
         .width(Length::Fill)
+        .height(Length::Fill)
         .align_x(Alignment::Center);
 
         for entry in &self.lists {
@@ -128,6 +129,15 @@ impl Taskscape {
                 Message::OpenList(entry.name.clone()),
             ));
         }
+
+        // Settings gear pinned to the bottom of the rail.
+        stack = stack
+            .push(Space::new().height(Length::Fill))
+            .push(self.rail_cell(
+                rail_glyph(self.theme_mode, Icon::Settings),
+                self.show_settings,
+                Message::ToggleSettings,
+            ));
 
         container(stack)
             .width(Length::Fixed(RAIL_WIDTH))
@@ -169,6 +179,7 @@ impl Taskscape {
                 t_heading("Lists", 18.0, palette.text_primary),
                 Space::new().width(Length::Fill),
                 t_icon_button(self.theme_mode, Icon::Import, None, Some(Message::ImportList)),
+                t_icon_button(self.theme_mode, Icon::Settings, None, Some(Message::ToggleSettings)),
                 t_icon_button(
                     self.theme_mode,
                     Icon::PanelLeftClose,
@@ -339,6 +350,60 @@ impl Taskscape {
                 .style(modal_backdrop(self.theme_mode)),
         )
         .on_press(Message::CancelRenameList);
+
+        Some(opaque(backdrop))
+    }
+
+    /// The "Clear all" confirmation modal, shown only while a clear is pending.
+    /// Same dimmed-backdrop pattern as [`rename_modal`].
+    pub(crate) fn clear_all_modal(&self) -> Option<AppElement<'_>> {
+        if !self.confirming_clear_all {
+            return None;
+        }
+        let palette = tokens(self.theme_mode);
+        let list = self.current_list.as_deref().unwrap_or("this list");
+
+        let card = container(
+            column![
+                t_heading("Clear all tasks?", 20.0, palette.text_primary),
+                t_body(
+                    format!("This removes every task in \"{list}\". You can undo it afterwards."),
+                    13.0,
+                    palette.text_muted,
+                ),
+                row![
+                    Space::new().width(Length::Fill),
+                    t_button(
+                        self.theme_mode,
+                        None,
+                        "Cancel",
+                        ButtonKind::Ghost,
+                        Some(Message::CancelClearAll),
+                    ),
+                    t_button(
+                        self.theme_mode,
+                        Some(Icon::Trash2),
+                        "Clear all",
+                        ButtonKind::Primary,
+                        Some(Message::ClearAll),
+                    ),
+                ]
+                .spacing(8)
+                .align_y(Alignment::Center),
+            ]
+            .spacing(14),
+        )
+        .width(Length::Fixed(380.0))
+        .padding(20)
+        .style(modal_card(self.theme_mode));
+
+        let backdrop = mouse_area(
+            container(center(card))
+                .width(Length::Fill)
+                .height(Length::Fill)
+                .style(modal_backdrop(self.theme_mode)),
+        )
+        .on_press(Message::CancelClearAll);
 
         Some(opaque(backdrop))
     }

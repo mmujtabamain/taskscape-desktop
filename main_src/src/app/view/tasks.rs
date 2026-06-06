@@ -56,7 +56,7 @@ impl Taskscape {
                 Some(Icon::CircleX),
                 "Clear all",
                 ButtonKind::Ghost,
-                Some(Message::ClearAll),
+                Some(Message::RequestClearAll),
             ),
         ]
         .spacing(8)

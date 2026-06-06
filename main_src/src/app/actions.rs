@@ -141,6 +141,24 @@ impl Taskscape {
         storage::save_config(&config);
     }
 
+    /// Leaves the settings page (and stops any in-progress hotkey capture).
+    pub(crate) fn leave_settings(&mut self) {
+        self.show_settings = false;
+        self.recording_hotkey = false;
+    }
+
+    /// Writes the user-facing settings to the config, preserving fields managed
+    /// elsewhere (e.g. `last_open`) via load-modify-save.
+    pub(crate) fn persist_settings(&self) {
+        let mut config = storage::load_config();
+        config.theme = Some(self.theme_mode);
+        config.reopen_last_list = self.reopen_last_list;
+        config.confirm_clear_all = self.confirm_clear_all;
+        config.hotkey_enabled = self.hotkey_enabled;
+        config.hotkey = Some(self.hotkey.clone());
+        storage::save_config(&config);
+    }
+
     /// Loads a list's tasks into state without touching status/config. Used at
     /// startup to restore the last-used list.
     pub(crate) fn open_list_quiet(&mut self, name: &str) {

@@ -11,6 +11,7 @@
 pub mod client;
 pub mod server;
 
+use crate::hotkey::HotkeySpec;
 use crate::models::Task;
 use serde::{Deserialize, Serialize};
 use std::io::{self, BufRead, Write};
@@ -46,6 +47,13 @@ pub enum IpcMessage {
     RemoveTask { index: usize },
     /// The task at `index` had its completed flag set to `completed`.
     ToggleTaskCompleted { index: usize, completed: bool },
+    /// Sent by the **main app** when the user changes the mini-window hotkey in
+    /// settings: the tray re-registers it live. `hotkey` is `None` to use the
+    /// built-in default; `enabled` toggles the binding off entirely.
+    SetHotkey {
+        hotkey: Option<HotkeySpec>,
+        enabled: bool,
+    },
     /// Sent by the **tray** to ask the main app to come forward and open its list
     /// sidebar (so the user can change the current list).
     ShowMain,

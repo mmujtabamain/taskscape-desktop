@@ -17,6 +17,19 @@ impl Taskscape {
         ipc::client::send(&message);
     }
 
+    /// Pushes the current mini-window hotkey binding to the tray so it can
+    /// re-register it live. No-op when not linked (the tray reads the same config
+    /// on its next launch).
+    pub(crate) fn send_hotkey_config(&self) {
+        if !self.ipc_connected {
+            return;
+        }
+        ipc::client::send(&IpcMessage::SetHotkey {
+            hotkey: Some(self.hotkey.clone()),
+            enabled: self.hotkey_enabled,
+        });
+    }
+
     /// Pushes the open list's name and tasks to the tray so the mini window
     /// follows a list switch. No-op when not linked.
     pub(crate) fn resync_tray(&self) {
@@ -80,7 +93,8 @@ impl Taskscape {
             }
             // The main app is the source of truth, so it never adopts a peer's
             // `Hello`; a `Bye` is handled by the transport's disconnect.
-            IpcMessage::Hello { .. } | IpcMessage::Bye => {}
+            // `SetHotkey` is main→tray only, so it never arrives here.
+            IpcMessage::Hello { .. } | IpcMessage::Bye | IpcMessage::SetHotkey { .. } => {}
         }
 
         self.applying_remote = false;

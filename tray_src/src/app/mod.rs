@@ -155,8 +155,14 @@ impl TrayApp {
         // No visible window at startup: open the hidden bootstrap window so the
         // tray/hotkey installers can run on the UI thread (see update.rs).
         let (_id, open) = window::open(Self::bootstrap_window_settings());
+
+        // Match the theme the main app saved, so the mini window agrees on launch.
+        let mut state = Self::default();
+        if let Some(theme) = common::storage::load_config().theme {
+            state.theme_mode = theme;
+        }
         (
-            Self::default(),
+            state,
             iced::Task::batch([load_fonts, open.map(Message::WindowOpened)]),
         )
     }
