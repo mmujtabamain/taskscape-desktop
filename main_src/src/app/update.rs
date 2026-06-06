@@ -121,16 +121,11 @@ impl Taskscape {
                     self.status_message = format!("Native menu: {error}");
                 }
             }
-            Message::WindowCloseRequested(id) => {
-                // macOS: minimize to the Dock instead of quitting, so clicking
-                // the Dock icon restores it. Other platforms close normally.
-                #[cfg(target_os = "macos")]
-                {
-                    self.status_message = String::from("Minimized to the Dock.");
-                    return window::minimize(id, true);
-                }
-                #[cfg(not(target_os = "macos"))]
-                return window::close(id);
+            Message::WindowCloseRequested(_id) => {
+                // Closing the main window quits the app entirely. The menu-bar
+                // tray keeps running and relaunches us when the user clicks the
+                // mini window's list title.
+                return iced::exit();
             }
             Message::IpcEvent(event) => return self.handle_ipc(event),
             Message::KeyboardEvent(event) => {
@@ -196,11 +191,12 @@ impl Taskscape {
                 Key::Character("m") if modifiers.command() => {
                     return Some(window::minimize(id, true));
                 }
+                // Quitting and closing the window both exit the app entirely.
                 Key::Character("q") if modifiers.command() => {
-                    return Some(window::close(id));
+                    return Some(iced::exit());
                 }
                 Key::Character("w") if modifiers.command() => {
-                    return Some(window::minimize(id, true));
+                    return Some(iced::exit());
                 }
                 _ => {}
             }
@@ -212,9 +208,9 @@ impl Taskscape {
             match key.as_ref() {
                 Key::Character("f") if logo => return Some(window::toggle_maximize(id)),
                 Key::Character("m") if logo => return Some(window::minimize(id, true)),
-                Key::Character("w") if logo => return Some(window::close(id)),
+                Key::Character("w") if logo => return Some(iced::exit()),
                 Key::Named(iced::keyboard::key::Named::F4) if modifiers.alt() => {
-                    return Some(window::close(id));
+                    return Some(iced::exit());
                 }
                 _ => {}
             }
@@ -226,9 +222,9 @@ impl Taskscape {
             match key.as_ref() {
                 Key::Character("f") if logo => return Some(window::toggle_maximize(id)),
                 Key::Character("m") if logo => return Some(window::minimize(id, true)),
-                Key::Character("w") if logo => return Some(window::close(id)),
+                Key::Character("w") if logo => return Some(iced::exit()),
                 Key::Named(iced::keyboard::key::Named::F4) if modifiers.alt() => {
-                    return Some(window::close(id));
+                    return Some(iced::exit());
                 }
                 _ => {}
             }

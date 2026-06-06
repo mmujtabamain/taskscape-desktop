@@ -23,9 +23,9 @@ fn try_launch_main() -> Result<(), String> {
     //   Taskscape.app/Contents/Library/LoginItems/Taskscape Tray.app/Contents/MacOS/taskscape-tray
     // Walk up from the tray exe to the outer `Taskscape.app` and `open` it.
     // .../Taskscape Tray.app/Contents/MacOS/taskscape-tray
-    //  └─ ancestors: MacOS → Contents → Taskscape Tray.app → LoginItems →
-    //     Library → Contents → Taskscape.app
-    if let Some(main_bundle) = exe.ancestors().nth(6) {
+    //  └─ ancestors: 1:MacOS → 2:Contents → 3:Taskscape Tray.app → 4:LoginItems
+    //     → 5:Library → 6:Contents → 7:Taskscape.app
+    if let Some(main_bundle) = exe.ancestors().nth(7) {
         if main_bundle.extension().and_then(|e| e.to_str()) == Some("app")
             && main_bundle.exists()
         {

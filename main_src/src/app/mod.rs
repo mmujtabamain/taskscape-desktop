@@ -122,9 +122,10 @@ impl Taskscape {
     fn main_window_settings() -> window::Settings {
         window::Settings {
             min_size: Some(Size::new(980.0, 680.0)),
-            // On macOS we intercept the close request to minimize to the Dock
-            // instead of quitting; other platforms close = quit.
-            exit_on_close_request: !cfg!(target_os = "macos"),
+            // Intercept the close request ourselves (see `WindowCloseRequested`)
+            // so closing the window quits the app rather than leaving the daemon
+            // running windowless.
+            exit_on_close_request: false,
             ..window::Settings::default()
         }
     }
