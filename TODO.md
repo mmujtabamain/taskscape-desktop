@@ -19,3 +19,6 @@
 - [ ] Move Quit button to bottom
 - [ ] Remove + button
     - [ ] Add hint to press Enter instead
+- [ ] Light mode for mini window
+- [ ] Tweak the spacing of mini window
+- [ ] Tone down the roundness
