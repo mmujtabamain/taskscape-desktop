@@ -1,0 +1,52 @@
+# tray_src — `taskscape-tray` (menu-bar service)
+
+Background service with **no Dock icon** (LSUIElement). **IPC server.** Owns the
+menu-bar icon, the global hotkey, and the compact mini window. Mirrors the main
+app's list; mini-window edits flow back to the main app. Manifest:
+[tray_src/Cargo.toml](../tray_src/Cargo.toml) (uses `tray-icon`,
+`global-hotkey`, and objc2 AppKit/QuartzCore on macOS).
+
+State, `Message` enum, and Iced wiring live in
+[src/app/mod.rs](../tray_src/src/app/mod.rs). Runs as a daemon with **zero
+windows at startup** — a hidden bootstrap window installs the tray + hotkey,
+then the service runs windowless until the mini window is opened.
+
+## Entry & wiring
+
+| File                                               | Purpose                                                                                                                                                                               |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [src/main.rs](../tray_src/src/main.rs)             | `main()`: `app::run()`                                                                                                                                                                |
+| [src/app/mod.rs](../tray_src/src/app/mod.rs)       | **`TrayApp` state struct** + **`Message` enum** (~16 variants); `boot`, window-settings builders (mini / confirm / bootstrap), `title`, `theme`, `view_window`, `subscription`, `run` |
+| [src/app/launch.rs](../tray_src/src/app/launch.rs) | `launch_main`: open/foreground the main app — walk up the nested bundle to `Taskscape.app` and `open` it (dev: sibling `taskscape` binary)                                            |
+
+## Behavior modules
+
+| File                                               | Purpose                                                                                                                                                                                                                                                              |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [src/app/update.rs](../tray_src/src/app/update.rs) | Central `update`: task mutations, window lifecycle (mini / quit-confirm / bootstrap), tray/hotkey/IPC events, quit flow, Esc handling. `TrayAnchor`, `toggle_mini_window`, `mini_window_position`, `open_quit_confirm`, `quit` (sends `Shutdown`, then `iced::exit`) |
+| [src/app/tray.rs](../tray_src/src/app/tray.rs)     | Menu-bar icon + menu: `TrayCommand { ShowWindow{rect}, Quit }`, `install`, `subscription` (icon + menu event threads), `build_icon` (procedural glyph), `main_screen_scale` (NSScreen), `round_window` (CALayer rounded corners, no shadow)                          |
+| [src/app/hotkey.rs](../tray_src/src/app/hotkey.rs) | Global hotkey (default Option/Alt+`): `HotkeyCommand::ToggleMini`, `install`, `apply(spec, enabled)`(re-register live),`to_hotkey`, `configured`, `subscription`→ see [ipc.md](ipc.md) for live rebind via`SetHotkey`                                                |
+| [src/app/sync.rs](../tray_src/src/app/sync.rs)     | IPC server glue: `broadcast`, `handle_ipc`, `apply_remote` (`Hello`/`AddTask`/`RemoveTask`/`ToggleTaskCompleted`/`SetHotkey`), `applying_remote` echo guard → see [ipc.md](ipc.md)                                                                                   |
+
+## View
+
+| File                                           | Purpose                                                                                                                                                  |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [src/app/mini.rs](../tray_src/src/app/mini.rs) | Mini window UI: `mini_view` (header + composer + scrollable task list + footer), `mini_task_row`, and `quit_confirm_view` (draggable borderless popover) |
+
+## Other
+
+| File                                             | Purpose                                                                         |
+| ------------------------------------------------ | ------------------------------------------------------------------------------- |
+| [macos/Info.plist](../tray_src/macos/Info.plist) | Tray bundle metadata; **`LSUIElement = true`** → background agent, no Dock icon |
+
+## Notes
+
+- The mini window is transparent + borderless; macOS-native rounding/shadow
+  tweaks (`round_window`) and icon-anchored positioning
+  (`mini_window_position` × `main_screen_scale`) make it look native. All
+  `#[cfg(target_os = "macos")]`-gated.
+- Tray/hotkey background threads forward OS events into the Iced `subscription`
+  as `Message`s.
+- Mini-window task edits call `broadcast()` → the main app applies and re-saves
+  them (the tray does not own the on-disk list).
