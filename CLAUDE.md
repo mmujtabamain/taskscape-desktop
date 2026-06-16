@@ -65,9 +65,9 @@ cargo check                              # fast type-check
 
 ## Known gotchas
 
-- [main_src/src/app/entry.rs](main_src/src/app/entry.rs) is **orphaned dead code**:
-  it is not declared in `app/mod.rs` and references a non-existent
-  `crate::app::application` module. The real entry point is `app::run()` at the
-  bottom of [main_src/src/app/mod.rs](main_src/src/app/mod.rs).
+- The main app's entry point is `app::run()` at the bottom of
+  [main_src/src/app/mod.rs](main_src/src/app/mod.rs) (called from
+  [main_src/src/main.rs](main_src/src/main.rs)) — there is no separate `entry`
+  module.
 - The build artifact tree (`target/`) and `dist/` are large; ignore them when
   searching. Source is only under `common/src`, `main_src/src`, `tray_src/src`.

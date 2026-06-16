@@ -9,3 +9,4 @@
 - [ ] Allow Dragging Mini Window
 - [ ] Hotkey opens mini window at mouse position
 - [ ] Focus Mini Window On Open
+- [ ] Mini window close on lose focus

@@ -16,7 +16,6 @@ modules by concern.
 | [src/app/mod.rs](../main_src/src/app/mod.rs)                 | **`Taskscape` state struct** (~22 fields) + **`Message` enum** (~45 variants); `boot`, `title`, `theme`, `view_window`, `subscription`, `run`; type aliases `AppElement`, `AppTask` |
 | [src/app/launch.rs](../main_src/src/app/launch.rs)           | `ensure_tray_running`: spawn the tray binary if the socket isn't served (packaged: the nested `.app`; dev: sibling `taskscape-tray`)                                                |
 | [src/app/native_menu.rs](../main_src/src/app/native_menu.rs) | Native menu bar (muda): `NativeMenuCommand`, `install_for_window`, `build_menu`, `subscription` (macOS ✓ / Windows ✓ / Linux ✗)                                                     |
-| ⚠️ [src/app/entry.rs](../main_src/src/app/entry.rs)          | **Orphaned dead code** — not declared in `mod.rs`, refers to a non-existent `application` module. Ignore.                                                                           |
 
 ## update / state logic
 
