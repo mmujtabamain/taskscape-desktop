@@ -6,7 +6,7 @@
 
 ## Jun 16 2026
 
-- [ ] Allow Dragging Mini Window
-- [ ] Hotkey opens mini window at mouse position
-- [ ] Focus Mini Window On Open
-- [ ] Mini window close on lose focus
+- [x] Allow Dragging Mini Window
+- [x] Hotkey opens mini window at mouse position
+- [x] Focus Mini Window On Open
+- [x] Mini window close on lose focus

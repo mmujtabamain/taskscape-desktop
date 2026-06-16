@@ -13,6 +13,15 @@ struct TrayAnchor {
     height: f64,
 }
 
+/// Where to place the mini window when opening it.
+#[derive(Debug, Clone, Copy)]
+enum MiniSpawn {
+    /// Anchored beneath the menu-bar icon (opened from the tray).
+    Tray(TrayAnchor),
+    /// At the current mouse cursor (summoned by the global hotkey).
+    Mouse,
+}
+
 impl TrayApp {
     pub(crate) fn update(&mut self, message: Message) -> AppTask {
         match message {
@@ -48,9 +57,21 @@ impl TrayApp {
                 // rounded: clip their content layer to a rounded rect (matching
                 // the shell's 16px radius) so the corners aren't square. Must run
                 // on the UI thread; window::run guarantees that.
-                if self.mini_window_id == Some(window_id)
-                    || self.confirm_window_id == Some(window_id)
-                {
+                if self.mini_window_id == Some(window_id) {
+                    // Also pull the window to the foreground and make it key: as a
+                    // background (accessory) app, the tray must activate itself or
+                    // the mini window never accepts keyboard input. Then put the
+                    // cursor straight in the task input so you can start typing.
+                    let prepare = window::run(window_id, |window| {
+                        crate::app::tray::round_window(window, 16.0);
+                        crate::app::tray::focus_window(window);
+                    })
+                    .discard();
+                    let focus_input =
+                        iced::widget::operation::focus(crate::app::mini::MINI_INPUT_ID);
+                    return Task::batch([prepare, focus_input]);
+                }
+                if self.confirm_window_id == Some(window_id) {
                     return window::run(window_id, |window| {
                         crate::app::tray::round_window(window, 16.0);
                     })
@@ -71,6 +92,7 @@ impl TrayApp {
             Message::WindowClosed(window_id) => {
                 if self.mini_window_id == Some(window_id) {
                     self.mini_window_id = None;
+                    self.mini_focused = false;
                 } else if self.confirm_window_id == Some(window_id) {
                     self.confirm_window_id = None;
                     self.confirm_focused = false;
@@ -90,7 +112,22 @@ impl TrayApp {
                 }
             }
             Message::WindowEvent(id, event) => {
-                if self.confirm_window_id == Some(id) {
+                if self.mini_window_id == Some(id) {
+                    match event {
+                        // Mark focused once it actually becomes key.
+                        window::Event::Focused => self.mini_focused = true,
+                        // Dismiss like a native popover when focus leaves — but
+                        // only after it has been focused, so the transient unfocus
+                        // during open doesn't close it instantly.
+                        window::Event::Unfocused if self.mini_focused => {
+                            self.mini_window_id = None;
+                            self.mini_focused = false;
+                            self.status_message = String::from("Mini window closed.");
+                            return window::close(id);
+                        }
+                        _ => {}
+                    }
+                } else if self.confirm_window_id == Some(id) {
                     match event {
                         // Mark focused once it actually becomes key.
                         window::Event::Focused => self.confirm_focused = true,
@@ -119,7 +156,7 @@ impl TrayApp {
                         width: icon_width,
                         height: icon_height,
                     };
-                    return self.toggle_mini_window(Some(anchor));
+                    return self.toggle_mini_window(Some(MiniSpawn::Tray(anchor)));
                 }
                 TrayCommand::Quit => return self.open_quit_confirm(),
             },
@@ -133,6 +170,11 @@ impl TrayApp {
             }
             Message::DragConfirm => {
                 if let Some(id) = self.confirm_window_id {
+                    return window::drag(id);
+                }
+            }
+            Message::DragMini => {
+                if let Some(id) = self.mini_window_id {
                     return window::drag(id);
                 }
             }
@@ -154,7 +196,9 @@ impl TrayApp {
             Message::HotkeyEvent(command) => {
                 use crate::app::hotkey::HotkeyCommand;
                 match command {
-                    HotkeyCommand::ToggleMini => return self.toggle_mini_window(None),
+                    HotkeyCommand::ToggleMini => {
+                        return self.toggle_mini_window(Some(MiniSpawn::Mouse));
+                    }
                 }
             }
             Message::HotkeyInstalled(result) => {
@@ -204,21 +248,45 @@ impl TrayApp {
 
     /// Toggles the compact mini window: open + focus it if hidden, close it if
     /// already showing. Shared by the menu bar icon and the keyboard shortcut.
-    fn toggle_mini_window(&mut self, anchor: Option<TrayAnchor>) -> AppTask {
+    fn toggle_mini_window(&mut self, spawn: Option<MiniSpawn>) -> AppTask {
         if let Some(id) = self.mini_window_id.take() {
+            self.mini_focused = false;
             self.status_message = String::from("Mini window closed.");
             return window::close(id);
         }
 
         let mut settings = Self::mini_window_settings();
-        if let Some(anchor) = anchor {
-            settings.position = Self::mini_window_position(&anchor, settings.size);
+        match spawn {
+            // Opened from the tray: anchor it beneath the menu-bar icon.
+            Some(MiniSpawn::Tray(anchor)) => {
+                settings.position = Self::mini_window_position(&anchor, settings.size);
+            }
+            // Summoned by the hotkey: drop it at the mouse cursor.
+            Some(MiniSpawn::Mouse) => {
+                if let Some(position) = Self::mouse_window_position() {
+                    settings.position = position;
+                }
+            }
+            None => {}
         }
 
         let (id, open) = window::open(settings);
         self.mini_window_id = Some(id);
+        self.mini_focused = false;
         self.status_message = String::from("Mini window opened.");
         Task::batch([open.map(Message::WindowOpened), window::gain_focus(id)])
+    }
+
+    /// Computes a window position (in logical points) that places the mini
+    /// window's top-left corner at the current mouse cursor — used when the
+    /// window is summoned by the global hotkey. Returns `None` if the cursor
+    /// location can't be read, leaving the default position.
+    fn mouse_window_position() -> Option<window::Position> {
+        let (mouse_x, mouse_y) = crate::app::tray::mouse_position_top_left()?;
+        Some(window::Position::Specific(iced::Point::new(
+            mouse_x as f32,
+            mouse_y as f32,
+        )))
     }
 
     /// Computes a window position (in logical points) that horizontally centers

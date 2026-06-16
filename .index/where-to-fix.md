@@ -39,7 +39,8 @@ relative to the repo root. Deeper file detail: [common.md](common.md),
 | Goal                                                       | Edit                                                                                                                     |
 | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | Mini window layout/content                                 | [tray_src/src/app/mini.rs](../tray_src/src/app/mini.rs)                                                                  |
-| Mini window position/size/open-close behavior              | [tray_src/src/app/update.rs](../tray_src/src/app/update.rs) (`toggle_mini_window`, `mini_window_position`)               |
+| Mini window position/size/open-close behavior              | [tray_src/src/app/update.rs](../tray_src/src/app/update.rs) (`toggle_mini_window`, `mini_window_position`, `mouse_window_position`)               |
+| Mini window drag / focus-on-open / close-on-blur           | [tray_src/src/app/update.rs](../tray_src/src/app/update.rs) (`DragMini`, `mini_focused`) + [tray_src/src/app/tray.rs](../tray_src/src/app/tray.rs) (`focus_window`, `mouse_position_top_left`) |
 | Menu-bar icon, its menu, the drawn glyph                   | [tray_src/src/app/tray.rs](../tray_src/src/app/tray.rs)                                                                  |
 | Mini window rounded corners / no shadow / Retina anchoring | [tray_src/src/app/tray.rs](../tray_src/src/app/tray.rs) (`round_window`, `main_screen_scale`)                            |
 | Global hotkey default / registration / rebind              | [tray_src/src/app/hotkey.rs](../tray_src/src/app/hotkey.rs) + [common/src/hotkey.rs](../common/src/hotkey.rs) (the spec) |

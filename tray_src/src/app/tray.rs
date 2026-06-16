@@ -165,6 +165,68 @@ pub fn round_window(
 ) {
 }
 
+/// Pulls the window backing `handle` to the foreground and makes it the key
+/// window.
+///
+/// The tray runs as a background **accessory** app (LSUIElement), so ordering a
+/// window front is not enough — the *app* itself must be activated or the window
+/// never becomes key and can't accept keyboard input. We activate the app and
+/// then make the window key. Must run on the UI thread (call inside `window::run`).
+#[cfg(target_os = "macos")]
+pub fn focus_window(handle: &dyn iced::window::raw_window_handle::HasWindowHandle) {
+    use iced::window::raw_window_handle::RawWindowHandle;
+    use objc2_app_kit::{NSApplication, NSView};
+    use objc2_foundation::MainThreadMarker;
+
+    let Ok(window_handle) = handle.window_handle() else {
+        return;
+    };
+    let RawWindowHandle::AppKit(appkit) = window_handle.as_raw() else {
+        return;
+    };
+
+    // SAFETY: we're on the UI thread (window::run guarantees it) and the view
+    // pointer is valid for the lifetime of this call.
+    unsafe {
+        if let Some(mtm) = MainThreadMarker::new() {
+            // `activateIgnoringOtherApps` is soft-deprecated in favour of
+            // `activate()`, but the replacement is cooperative and can silently
+            // no-op; a hotkey-summoned popover must reliably steal focus.
+            #[allow(deprecated)]
+            NSApplication::sharedApplication(mtm).activateIgnoringOtherApps(true);
+        }
+
+        let view: &NSView = appkit.ns_view.cast().as_ref();
+        if let Some(window) = view.window() {
+            window.makeKeyAndOrderFront(None);
+        }
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+pub fn focus_window(_handle: &dyn iced::window::raw_window_handle::HasWindowHandle) {}
+
+/// The current mouse location in logical points, with a **top-left** origin
+/// (matching how iced positions windows). `None` if it can't be read.
+///
+/// macOS reports the global mouse location with a bottom-left origin, so we flip
+/// it against the main screen's height.
+#[cfg(target_os = "macos")]
+pub fn mouse_position_top_left() -> Option<(f64, f64)> {
+    use objc2_app_kit::{NSEvent, NSScreen};
+    use objc2_foundation::MainThreadMarker;
+
+    let mtm = MainThreadMarker::new()?;
+    let height = NSScreen::mainScreen(mtm)?.frame().size.height;
+    let point = NSEvent::mouseLocation();
+    Some((point.x, height - point.y))
+}
+
+#[cfg(not(target_os = "macos"))]
+pub fn mouse_position_top_left() -> Option<(f64, f64)> {
+    None
+}
+
 #[cfg(not(target_os = "macos"))]
 pub fn install() -> Result<(), String> {
     // TODO: Windows (Shell_NotifyIcon) and Linux (StatusNotifierItem/GTK).

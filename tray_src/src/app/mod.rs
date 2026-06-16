@@ -41,6 +41,9 @@ pub enum Message {
     /// Start dragging the quit popover window (it is borderless, so it has no
     /// title bar to drag).
     DragConfirm,
+    /// Start dragging the mini window (also borderless — its header doubles as
+    /// the drag handle).
+    DragMini,
     /// Clicking the list title: bring the main app forward + open its sidebar
     /// (launching it first if it is closed).
     ShowMainRequested,
@@ -55,6 +58,10 @@ pub struct TrayApp {
     pub(crate) bootstrap_window_id: Option<window::Id>,
     /// The compact mini window, when open.
     pub(crate) mini_window_id: Option<window::Id>,
+    /// Whether the mini window has gained focus yet. Like `confirm_focused`, we
+    /// only auto-close it on *losing* focus after it has been focused, so the
+    /// transient unfocus while it opens doesn't close it instantly.
+    pub(crate) mini_focused: bool,
     /// The small "Quit Taskscape?" confirmation popover window, when open.
     pub(crate) confirm_window_id: Option<window::Id>,
     /// Whether the confirm popover has gained focus yet — we only auto-close it on
@@ -83,6 +90,7 @@ impl Default for TrayApp {
         Self {
             bootstrap_window_id: None,
             mini_window_id: None,
+            mini_focused: false,
             confirm_window_id: None,
             confirm_focused: false,
             theme_mode: ThemeMode::Dark,

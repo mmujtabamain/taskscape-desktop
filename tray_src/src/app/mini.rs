@@ -9,17 +9,23 @@ use crate::app::{AppElement, Message, TrayApp};
 use common::models::Task;
 use common::thememanager::{
     ButtonKind, button_style, empty_state_container, mini_shell_container, panel_alt_container,
-    tokens,
+    text_input_style, tokens,
 };
-use common::widgets::{lucide_icon, t_body, t_button, t_caption, t_heading, t_icon_button, t_input_box};
-use iced::widget::{Space, button, checkbox, column, container, mouse_area, row, scrollable};
+use common::widgets::{lucide_icon, t_body, t_button, t_caption, t_heading, t_icon_button};
+use iced::widget::{Space, button, checkbox, column, container, mouse_area, row, scrollable, text_input};
 use iced::{Alignment, Length};
 use lucide_icons::Icon;
 
+/// Stable id for the mini window's task input, so it can be focused on open.
+pub(crate) const MINI_INPUT_ID: &str = "mini-task-input";
+
 impl TrayApp {
     pub(crate) fn mini_view(&self) -> AppElement<'_> {
+        // The window is borderless, so the header doubles as a drag handle:
+        // dragging its empty space moves the window, while the nested title and
+        // quit buttons still capture their own clicks.
         let content = column![
-            self.mini_header(),
+            mouse_area(self.mini_header()).on_press(Message::DragMini),
             self.mini_composer(),
             self.mini_task_list(),
             self.mini_footer(),
@@ -68,15 +74,19 @@ impl TrayApp {
     /// One-line composer: compact input + an add button matching the main app's
     /// icon buttons.
     fn mini_composer(&self) -> AppElement<'_> {
+        // Built inline (rather than via `t_input_box`) so it can carry an id and
+        // be focused when the window opens — mirroring the main app's rename input.
+        let input = text_input("Add a task…", &self.title_input)
+            .id(MINI_INPUT_ID)
+            .width(Length::Fill)
+            .padding([12, 14])
+            .size(16)
+            .on_input(Message::TitleChanged)
+            .on_submit(Message::AddTask)
+            .style(text_input_style(self.theme_mode));
+
         row![
-            t_input_box(
-                self.theme_mode,
-                "Add a task…",
-                &self.title_input,
-                Message::TitleChanged,
-                Length::Fill,
-                Some(Message::AddTask),
-            ),
+            input,
             t_icon_button(self.theme_mode, Icon::Plus, None, Some(Message::AddTask)),
         ]
         .spacing(6)
