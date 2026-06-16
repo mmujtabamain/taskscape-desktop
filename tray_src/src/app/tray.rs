@@ -206,6 +206,42 @@ pub fn focus_window(handle: &dyn iced::window::raw_window_handle::HasWindowHandl
 #[cfg(not(target_os = "macos"))]
 pub fn focus_window(_handle: &dyn iced::window::raw_window_handle::HasWindowHandle) {}
 
+/// Makes the window backing `handle` appear on **every** Space — including the
+/// separate Space a full-screen app occupies — instead of staying pinned to the
+/// desktop Space it was created on.
+///
+/// A plain window only shows on its origin Space, so the mini window was visible
+/// on the desktop but not when a full-screen app was frontmost. Setting
+/// `canJoinAllSpaces` puts it on all Spaces and `fullScreenAuxiliary` lets it
+/// float over a full-screen window. Must run on the UI thread (`window::run`).
+#[cfg(target_os = "macos")]
+pub fn pin_over_spaces(handle: &dyn iced::window::raw_window_handle::HasWindowHandle) {
+    use iced::window::raw_window_handle::RawWindowHandle;
+    use objc2_app_kit::{NSView, NSWindowCollectionBehavior};
+
+    let Ok(window_handle) = handle.window_handle() else {
+        return;
+    };
+    let RawWindowHandle::AppKit(appkit) = window_handle.as_raw() else {
+        return;
+    };
+
+    // SAFETY: we're on the UI thread (window::run guarantees it) and the view
+    // pointer is valid for the lifetime of this call.
+    unsafe {
+        let view: &NSView = appkit.ns_view.cast().as_ref();
+        if let Some(window) = view.window() {
+            window.setCollectionBehavior(
+                NSWindowCollectionBehavior::CanJoinAllSpaces
+                    | NSWindowCollectionBehavior::FullScreenAuxiliary,
+            );
+        }
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+pub fn pin_over_spaces(_handle: &dyn iced::window::raw_window_handle::HasWindowHandle) {}
+
 /// The current mouse location in logical points, with a **top-left** origin
 /// (matching how iced positions windows). `None` if it can't be read.
 ///

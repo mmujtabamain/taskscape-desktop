@@ -42,8 +42,10 @@ cargo check                              # fast type-check
 ## Runtime model
 
 - **Iced `daemon`** (not `application`): windows are opened programmatically and
-  the process survives window close. The main window can close and reopen while
-  the process stays alive for IPC.
+  a process can keep running with zero windows. The **tray** relies on this —
+  it runs windowless until the mini window opens. The **main app**, by contrast,
+  quits when its window closes (`WindowCloseRequested` → `iced::exit()`); the
+  tray relaunches it on demand.
 - **App = state struct + `Message` enum + `update`/`view`.** Each binary has its
   own `Taskscape` / `TrayApp` state and `Message` enum in its `app/mod.rs`.
 - **IPC asymmetry:** the main app is the source of truth and sends its full list

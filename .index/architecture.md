@@ -54,6 +54,12 @@ applying a mutation that arrived over IPC, and `broadcast()` is a no-op while
 that flag is set. Bulk changes (clear-all, list switch, import) skip per-item
 messages and instead re-send a full `Hello` (`resync_tray` on the main side).
 
+While the main app is **offline**, the tray has no one to broadcast to, so it
+persists its own mini-window edits to disk (`persist_local`) and loads the
+last-open list at `boot` — that's how those edits survive a closed main window.
+The two never write at once: `persist_local` no-ops whenever the link is up, so
+the main app stays the sole writer while it's running.
+
 See [ipc.md](ipc.md) for the message set and framing.
 
 ## Data flow (one mutation)

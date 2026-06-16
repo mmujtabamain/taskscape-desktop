@@ -34,12 +34,14 @@ impl TrayApp {
                     self.title_input.clear();
                     self.status_message = String::from("Task added.");
                     self.broadcast(IpcMessage::AddTask { title });
+                    self.persist_local();
                 }
             }
             Message::RemoveTask(index) => {
                 if self.tasks.remove(index) {
                     self.status_message = String::from("Task removed.");
                     self.broadcast(IpcMessage::RemoveTask { index });
+                    self.persist_local();
                 }
             }
             Message::ToggleTaskCompleted(index, completed) => {
@@ -50,6 +52,7 @@ impl TrayApp {
                         String::from("Task marked open.")
                     };
                     self.broadcast(IpcMessage::ToggleTaskCompleted { index, completed });
+                    self.persist_local();
                 }
             }
             Message::WindowOpened(window_id) => {
@@ -58,12 +61,14 @@ impl TrayApp {
                 // the shell's 16px radius) so the corners aren't square. Must run
                 // on the UI thread; window::run guarantees that.
                 if self.mini_window_id == Some(window_id) {
-                    // Also pull the window to the foreground and make it key: as a
-                    // background (accessory) app, the tray must activate itself or
-                    // the mini window never accepts keyboard input. Then put the
-                    // cursor straight in the task input so you can start typing.
+                    // Round the corners, pin it over every Space (so it shows over
+                    // full-screen apps, not just the desktop), pull it to the
+                    // foreground and make it key — as a background (accessory) app
+                    // the tray must activate itself or the window never accepts
+                    // keyboard input — then put the cursor in the task input.
                     let prepare = window::run(window_id, |window| {
                         crate::app::tray::round_window(window, 16.0);
+                        crate::app::tray::pin_over_spaces(window);
                         crate::app::tray::focus_window(window);
                     })
                     .discard();
@@ -74,6 +79,7 @@ impl TrayApp {
                 if self.confirm_window_id == Some(window_id) {
                     return window::run(window_id, |window| {
                         crate::app::tray::round_window(window, 16.0);
+                        crate::app::tray::pin_over_spaces(window);
                     })
                     .discard();
                 }

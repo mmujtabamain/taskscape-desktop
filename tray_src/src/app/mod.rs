@@ -164,10 +164,21 @@ impl TrayApp {
         // tray/hotkey installers can run on the UI thread (see update.rs).
         let (_id, open) = window::open(Self::bootstrap_window_settings());
 
-        // Match the theme the main app saved, so the mini window agrees on launch.
+        // Match the theme the main app saved, and adopt the last-open list, so the
+        // mini window agrees on launch and — crucially — has a list to edit and
+        // persist to while the main app is closed. When the main app is linked it
+        // re-sends this as the source of truth via `Hello`.
         let mut state = Self::default();
-        if let Some(theme) = common::storage::load_config().theme {
+        let config = common::storage::load_config();
+        if let Some(theme) = config.theme {
             state.theme_mode = theme;
+        }
+        if config.reopen_last_list
+            && let Some(last) = config.last_open
+            && let Ok(file) = common::storage::load(&last)
+        {
+            state.current_list = Some(file.name);
+            state.tasks.replace(file.tasks);
         }
         (
             state,

@@ -2,7 +2,8 @@
 //!
 //! Adopts the main app's source-of-truth list on `Hello`, applies the mutations
 //! it receives without echoing them back, and mirrors its own mini-window
-//! mutations to the main app.
+//! mutations to the main app — or, when the main app is offline, persists them
+//! to disk itself.
 
 use crate::app::{AppTask, TrayApp};
 use common::ipc::{self, IpcInbound, IpcMessage};
@@ -15,6 +16,23 @@ impl TrayApp {
             return;
         }
         ipc::server::send(&message);
+    }
+
+    /// Persists the current list straight to disk — the fallback for
+    /// [`broadcast`](Self::broadcast) when the main app is offline, so
+    /// mini-window edits survive with the main window closed. While the main app
+    /// is linked it owns the on-disk list (and saves there itself), so this
+    /// no-ops to avoid two writers racing on the same file.
+    pub(crate) fn persist_local(&mut self) {
+        if self.ipc_connected {
+            return;
+        }
+        let Some(name) = self.current_list.clone() else {
+            return;
+        };
+        if let Err(error) = common::storage::save(&name, self.tasks.tasks()) {
+            self.status_message = error;
+        }
     }
 
     /// Handles an inbound link event. Returns any follow-up task.
