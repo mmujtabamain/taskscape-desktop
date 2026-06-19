@@ -11,6 +11,7 @@ impl Taskscape {
                 self.theme_mode = self.theme_mode.toggled();
                 self.status_message = format!("Switched to {}.", self.theme_mode.label());
                 self.persist_settings();
+                self.broadcast(IpcMessage::SetTheme(self.theme_mode));
             }
             Message::TitleChanged(value) => self.title_input = value,
             Message::ToggleTaskCompleted(index, completed) => {
@@ -64,6 +65,7 @@ impl Taskscape {
                 self.theme_mode = mode;
                 self.status_message = format!("Switched to {}.", mode.label());
                 self.persist_settings();
+                self.broadcast(IpcMessage::SetTheme(mode));
             }
             Message::SetReopenLastList(on) => {
                 self.reopen_last_list = on;

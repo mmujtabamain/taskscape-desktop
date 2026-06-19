@@ -13,6 +13,7 @@ pub mod server;
 
 use crate::hotkey::HotkeySpec;
 use crate::models::Task;
+use crate::thememanager::ThemeMode;
 use serde::{Deserialize, Serialize};
 use std::io::{self, BufRead, Write};
 use std::path::PathBuf;
@@ -54,6 +55,9 @@ pub enum IpcMessage {
         hotkey: Option<HotkeySpec>,
         enabled: bool,
     },
+    /// Sent by the **main app** when the theme changes, so the mini window
+    /// follows it live (the tray also reads the saved theme on its own launch).
+    SetTheme(ThemeMode),
     /// Sent by the **tray** to ask the main app to come forward and open its list
     /// sidebar (so the user can change the current list).
     ShowMain,

@@ -19,30 +19,36 @@ use lucide_icons::Icon;
 /// Stable id for the mini window's task input, so it can be focused on open.
 pub(crate) const MINI_INPUT_ID: &str = "mini-task-input";
 
+/// Corner radius used across the mini window — toned down from the previous
+/// 16px to a subtler 10px so the popover reads as a compact utility surface
+/// rather than a soft card.
+pub(crate) const MINI_RADIUS: f32 = 10.0;
+
 impl TrayApp {
     pub(crate) fn mini_view(&self) -> AppElement<'_> {
         // The window is borderless, so the header doubles as a drag handle:
-        // dragging its empty space moves the window, while the nested title and
-        // quit buttons still capture their own clicks.
+        // dragging its empty space moves the window, while the nested title
+        // still captures its own clicks. The quit button lives in the footer
+        // now, so the header is title-only.
         let content = column![
             mouse_area(self.mini_header()).on_press(Message::DragMini),
             self.mini_composer(),
             self.mini_task_list(),
             self.mini_footer(),
         ]
-        .spacing(8)
+        .spacing(6)
         .height(Length::Fill);
 
         container(content)
             .width(Length::Fill)
             .height(Length::Fill)
-            .padding(10)
+            .padding(8)
             .style(mini_shell_container(self.theme_mode))
             .into()
     }
 
-    /// Slim header: the open list's name (clicking it opens the main app's list
-    /// sidebar), plus the quit button.
+    /// Slim header: just the open list's name (clicking it opens the main app's
+    /// list sidebar). The quit button moved to the footer.
     fn mini_header(&self) -> AppElement<'_> {
         let palette = tokens(self.theme_mode);
         let title = self.current_list.as_deref().unwrap_or("No list");
@@ -61,37 +67,40 @@ impl TrayApp {
         .padding([2, 4])
         .on_press(Message::ShowMainRequested);
 
-        row![
-            title_button,
-            Space::new().width(Length::Fill),
-            t_icon_button(self.theme_mode, Icon::Power, None, Some(Message::QuitRequested)),
-        ]
-        .align_y(Alignment::Center)
-        .spacing(6)
-        .into()
+        row![title_button, Space::new().width(Length::Fill),]
+            .align_y(Alignment::Center)
+            .spacing(6)
+            .into()
     }
 
-    /// One-line composer: compact input + an add button matching the main app's
-    /// icon buttons.
+    /// One-line composer: compact input only. The explicit "+" add button was
+    /// removed in favour of pressing Enter — a hint below the field points to
+    /// that. The input still submits on Enter via `on_submit`.
     fn mini_composer(&self) -> AppElement<'_> {
+        let palette = tokens(self.theme_mode);
+
         // Built inline (rather than via `t_input_box`) so it can carry an id and
         // be focused when the window opens — mirroring the main app's rename input.
         let input = text_input("Add a task…", &self.title_input)
             .id(MINI_INPUT_ID)
             .width(Length::Fill)
-            .padding([12, 14])
+            .padding([10, 12])
             .size(16)
             .on_input(Message::TitleChanged)
             .on_submit(Message::AddTask)
             .style(text_input_style(self.theme_mode));
 
-        row![
-            input,
-            t_icon_button(self.theme_mode, Icon::Plus, None, Some(Message::AddTask)),
-        ]
-        .spacing(6)
-        .align_y(Alignment::Center)
-        .into()
+        column![row![input,].spacing(6).align_y(Alignment::Center)]
+            .spacing(3)
+            .push(
+                row![
+                    lucide_icon(Icon::CornerDownLeft, 11.0, palette.text_muted),
+                    t_caption("Press Enter to add", 11.0, palette.text_muted),
+                ]
+                .spacing(4)
+                .align_y(Alignment::Center),
+            )
+            .into()
     }
 
     /// The task list, wrapped in a bordered panel.
@@ -105,7 +114,7 @@ impl TrayApp {
                     lucide_icon(Icon::ListTodo, 26.0, palette.text_muted),
                     t_caption("No tasks yet", 13.0, palette.text_secondary),
                 ]
-                .spacing(8)
+                .spacing(6)
                 .align_x(Alignment::Center),
             )
             .width(Length::Fill)
@@ -116,19 +125,19 @@ impl TrayApp {
         } else {
             let list = tasks
                 .iter()
-                .fold(column![].spacing(5), |col, (index, task)| {
+                .fold(column![].spacing(4), |col, (index, task)| {
                     col.push(self.mini_task_row(*index, task))
                 })
                 // Reserve a gutter on the right so the scrollbar doesn't overlap
                 // the rows' trash buttons.
-                .padding(iced::Padding::ZERO.right(10.0));
+                .padding(iced::Padding::ZERO.right(8.0));
             scrollable(list).height(Length::Fill).into()
         };
 
         container(inner)
             .width(Length::Fill)
             .height(Length::Fill)
-            .padding(7)
+            .padding(6)
             .style(empty_state_container(self.theme_mode))
             .into()
     }
@@ -153,12 +162,13 @@ impl TrayApp {
             .align_y(Alignment::Center)
             .spacing(8),
         )
-        .padding([6, 9])
+        .padding([5, 8])
         .style(panel_alt_container(self.theme_mode))
         .into()
     }
 
-    /// Thin footer: link status with a coloured dot + total task count.
+    /// Thin footer: link status with a coloured dot + total task count on the
+    /// left, and the quit button on the right (moved here from the header).
     fn mini_footer(&self) -> AppElement<'_> {
         let palette = tokens(self.theme_mode);
         let (dot, label) = if self.ipc_connected {
@@ -170,11 +180,12 @@ impl TrayApp {
         row![
             lucide_icon(Icon::Dot, 16.0, dot),
             t_caption(label, 11.0, palette.text_muted),
-            Space::new().width(Length::Fill),
             t_caption(format!("{} tasks", self.tasks.total()), 11.0, palette.text_muted),
+            Space::new().width(Length::Fill),
+            t_icon_button(self.theme_mode, Icon::Power, None, Some(Message::QuitRequested)),
         ]
         .align_y(Alignment::Center)
-        .spacing(2)
+        .spacing(6)
         .into()
     }
 

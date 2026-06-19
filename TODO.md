@@ -16,9 +16,9 @@
 - [ ] Allow attaching any file to tasks
   - [ ] Add option into context menu if possible
 - [x] Fix changes not persisting from tray app to main window
-- [ ] Move Quit button to bottom
-- [ ] Remove + button
-  - [ ] Add hint to press Enter instead
-- [ ] Light mode for mini window
-- [ ] Reduce spacing of mini window
-- [ ] Tone down the roundness
+- [x] Move Quit button to bottom
+- [x] Remove + button
+  - [x] Add hint to press Enter instead
+- [x] Light mode for mini window
+- [x] Reduce spacing of mini window
+- [x] Tone down the roundness

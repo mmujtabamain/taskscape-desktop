@@ -23,7 +23,7 @@ pub fn mini_shell_container(mode: ThemeMode) -> impl Fn(&Theme) -> container::St
         container::Style::default()
             .color(palette.text_primary)
             .background(background_gradient(mode))
-            .border(border(16.0, 1.5, with_alpha(palette.accent, 0.45)))
+            .border(border(10.0, 1.5, with_alpha(palette.accent, 0.45)))
     }
 }
 
@@ -34,7 +34,7 @@ pub fn panel_alt_container(mode: ThemeMode) -> impl Fn(&Theme) -> container::Sty
         container::Style::default()
             .color(palette.text_primary)
             .background(palette.panel_alt)
-            .border(border(16.0, 1.0, palette.border))
+            .border(border(10.0, 1.0, palette.border))
     }
 }
 
@@ -45,7 +45,7 @@ pub fn empty_state_container(mode: ThemeMode) -> impl Fn(&Theme) -> container::S
         container::Style::default()
             .color(palette.text_primary)
             .background(with_alpha(palette.panel_raised, 0.58))
-            .border(border(18.0, 1.0, with_alpha(palette.border_strong, 0.55)))
+            .border(border(12.0, 1.0, with_alpha(palette.border_strong, 0.55)))
     }
 }
 

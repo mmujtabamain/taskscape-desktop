@@ -88,6 +88,12 @@ impl TrayApp {
                     Err(error) => format!("Hotkey: {error}"),
                 };
             }
+            // The main app changed the theme: adopt it so the mini window
+            // follows live (the tray also reads the saved theme on its own
+            // launch, so this only matters while linked).
+            IpcMessage::SetTheme(mode) => {
+                self.theme_mode = mode;
+            }
             // The tray never receives these (they are tray→main only).
             IpcMessage::ShowMain | IpcMessage::Shutdown | IpcMessage::Bye => {}
         }

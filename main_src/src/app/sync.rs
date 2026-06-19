@@ -52,6 +52,10 @@ impl Taskscape {
                     list_name: self.current_list.clone(),
                     tasks: self.tasks.to_vec(),
                 });
+                // Push the current theme + hotkey so the mini window matches
+                // even if it was opened standalone with a stale config.
+                ipc::client::send(&IpcMessage::SetTheme(self.theme_mode));
+                self.send_hotkey_config();
                 self.status_message = String::from("Linked to mini service.");
             }
             IpcInbound::Disconnected => {
@@ -93,8 +97,8 @@ impl Taskscape {
             }
             // The main app is the source of truth, so it never adopts a peer's
             // `Hello`; a `Bye` is handled by the transport's disconnect.
-            // `SetHotkey` is main→tray only, so it never arrives here.
-            IpcMessage::Hello { .. } | IpcMessage::Bye | IpcMessage::SetHotkey { .. } => {}
+            // `SetHotkey` and `SetTheme` are main→tray only, so they never arrive here.
+            IpcMessage::Hello { .. } | IpcMessage::Bye | IpcMessage::SetHotkey { .. } | IpcMessage::SetTheme(_) => {}
         }
 
         self.applying_remote = false;
