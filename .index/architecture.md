@@ -77,13 +77,16 @@ mutation; undo/redo swap between the undo and redo stacks
 
 ## Persistence
 
-`~/Library/Application Support/Taskscape/`
+`~/.taskscape/`
 
-- `lists/<name>.json` — one file per task list
+- `lists/<name>.json` — one file per task list (tasks carry their attachments)
+- `files/` — copies of attached files + screenshots (see
+  [common/src/attachments.rs](../common/src/attachments.rs)); non-image files may
+  instead link to their original path
 - `config.json` — theme, last-open list, reopen-last toggle, confirm-clear
   toggle, hotkey spec + enabled flag
 
-All in [common/src/storage.rs](../common/src/storage.rs). Writes are
+Lists + config in [common/src/storage.rs](../common/src/storage.rs). Writes are
 write-through: every list/task mutation saves immediately.
 
 ## macOS-native bits (tray only)

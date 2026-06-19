@@ -19,14 +19,46 @@ impl Taskscape {
                 self.broadcast(IpcMessage::ToggleTaskCompleted { index, completed });
             }
             Message::AddTask => {
-                if let Some(title) = self.add_task() {
-                    self.broadcast(IpcMessage::AddTask { title });
+                if let Some((title, attachments)) = self.add_task() {
+                    self.broadcast(IpcMessage::AddTask { title, attachments });
                 }
             }
             Message::RemoveTask(index) => {
                 self.remove_task(index);
                 self.broadcast(IpcMessage::RemoveTask { index });
             }
+            Message::AttachFile(target) => {
+                return Self::launch_file_attach_dialog(target, self.modifiers.alt());
+            }
+            Message::FileChosen { target, copy, path } => {
+                if let Some(path) = path {
+                    match common::attachments::attachment_from_path(&path, copy) {
+                        Ok(attachment) => self.attach_to_target(target, attachment),
+                        Err(error) => self.status_message = error,
+                    }
+                } else {
+                    self.status_message = String::from("Attachment cancelled.");
+                }
+            }
+            Message::AttachScreenshot(target) => {
+                return Task::perform(
+                    async { common::attachments::capture_screenshot() },
+                    move |result| Message::ScreenshotCaptured { target, result },
+                );
+            }
+            Message::ScreenshotCaptured { target, result } => match result {
+                Ok(attachment) => self.attach_to_target(target, attachment),
+                Err(error) => self.status_message = error,
+            },
+            Message::RemoveTaskAttachment { task, attachment } => {
+                self.remove_task_attachment(task, attachment);
+            }
+            Message::RemoveStagedAttachment(index) => {
+                if index < self.staged_attachments.len() {
+                    self.staged_attachments.remove(index);
+                }
+            }
+            Message::OpenAttachment(path) => common::attachments::open_path(&path),
             Message::ClearCompleted => {
                 self.clear_completed();
                 self.resync_tray();
@@ -190,6 +222,12 @@ impl Taskscape {
             }
             Message::IpcEvent(event) => return self.handle_ipc(event),
             Message::KeyboardEvent(event) => {
+                // Track modifier state so attach actions can read whether
+                // Option/Alt is held (link vs. copy) at press time.
+                if let keyboard::Event::ModifiersChanged(modifiers) = &event {
+                    self.modifiers = *modifiers;
+                    return Task::none();
+                }
                 // While capturing a new hotkey, the keyboard belongs to the
                 // recorder — no app shortcuts fire.
                 if self.recording_hotkey {

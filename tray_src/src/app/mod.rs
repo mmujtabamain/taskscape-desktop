@@ -7,13 +7,23 @@ mod sync;
 mod tray;
 mod update;
 
+use common::models::Attachment;
 use common::tasklist::TaskList;
 use common::thememanager::{ThemeMode, app_theme};
 use common::utils::fonts;
 use iced::{Settings, Size, Subscription, Theme, daemon, keyboard, window};
+use std::path::PathBuf;
 
 pub type AppElement<'a> = iced::Element<'a, Message>;
 pub type AppTask = iced::Task<Message>;
+
+/// What an attach action targets: an existing task by index, or the composer
+/// (staged onto the next task created with Enter).
+#[derive(Debug, Clone, Copy)]
+pub enum AttachTarget {
+    Task(usize),
+    Composer,
+}
 
 #[derive(Debug, Clone)]
 pub enum Message {
@@ -22,6 +32,30 @@ pub enum Message {
     ToggleTaskCompleted(usize, bool),
     RemoveTask(usize),
     AddTask,
+    // --- Attachments ---
+    /// Open the file picker to attach a file to the given target. Holding
+    /// Option/Alt while pressing copies into Taskscape instead of linking.
+    AttachFile(AttachTarget),
+    /// The file picker returned (or was cancelled). `copy` is captured from the
+    /// modifier state at press time.
+    FileChosen {
+        target: AttachTarget,
+        copy: bool,
+        path: Option<PathBuf>,
+    },
+    /// Capture a full-screen screenshot and attach it to the given target.
+    AttachScreenshot(AttachTarget),
+    /// The screenshot capture finished.
+    ScreenshotCaptured {
+        target: AttachTarget,
+        result: Result<Attachment, String>,
+    },
+    /// Remove the attachment at `attachment` from the task at `task`.
+    RemoveTaskAttachment { task: usize, attachment: usize },
+    /// Remove the composer-staged attachment at this index.
+    RemoveStagedAttachment(usize),
+    /// Open an attachment in the OS default app.
+    OpenAttachment(PathBuf),
     WindowOpened(window::Id),
     WindowClosed(window::Id),
     WindowCloseRequested(window::Id),
@@ -62,6 +96,10 @@ pub struct TrayApp {
     /// only auto-close it on *losing* focus after it has been focused, so the
     /// transient unfocus while it opens doesn't close it instantly.
     pub(crate) mini_focused: bool,
+    /// Set while a native file-attach dialog is open. The dialog steals focus
+    /// from the mini window, which would otherwise auto-close on blur and yank
+    /// the picker's parent away — so we suppress the blur-close while it is set.
+    pub(crate) attaching: bool,
     /// The small "Quit Taskscape?" confirmation popover window, when open.
     pub(crate) confirm_window_id: Option<window::Id>,
     /// Whether the confirm popover has gained focus yet — we only auto-close it on
@@ -70,6 +108,11 @@ pub struct TrayApp {
     pub(crate) confirm_focused: bool,
     pub(crate) theme_mode: ThemeMode,
     pub(crate) title_input: String,
+    /// Attachments staged in the composer, applied to the next task added.
+    pub(crate) staged_attachments: Vec<Attachment>,
+    /// Latest keyboard modifier state, so attach actions can read whether
+    /// Option/Alt was held at press time (link vs. copy).
+    pub(crate) modifiers: keyboard::Modifiers,
     pub(crate) status_message: String,
     pub(crate) tasks: TaskList,
     /// Display name of the open list (mirrored from the main app via `Hello`);
@@ -91,10 +134,13 @@ impl Default for TrayApp {
             bootstrap_window_id: None,
             mini_window_id: None,
             mini_focused: false,
+            attaching: false,
             confirm_window_id: None,
             confirm_focused: false,
             theme_mode: ThemeMode::Dark,
             title_input: String::new(),
+            staged_attachments: Vec::new(),
+            modifiers: keyboard::Modifiers::default(),
             status_message: String::from("Ready."),
             tasks: TaskList::new(),
             current_list: None,

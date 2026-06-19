@@ -1,10 +1,10 @@
 # common — `taskscape-common` (shared library)
 
 Non-executable library shared by both binaries. Manifest:
-[common/Cargo.toml](../common/Cargo.toml). Crate root:
-[common/src/lib.rs](../common/src/lib.rs) — declares modules `hotkey`, `ipc`,
-`models`, `storage`, `tasklist`, `thememanager`, `utils`, `widgets`; re-exports
-`Task` and `TaskList`.
+[common/Cargo.toml](../common/Cargo.toml) (iced built with the `image` feature
+for attachment thumbnails). Crate root: [common/src/lib.rs](../common/src/lib.rs)
+— declares modules `attachments`, `hotkey`, `ipc`, `models`, `storage`,
+`tasklist`, `thememanager`, `utils`, `widgets`; re-exports `Task` and `TaskList`.
 
 > Theming and widgets have their own page: [theming.md](theming.md).
 > The IPC protocol has its own page: [ipc.md](ipc.md).
@@ -14,14 +14,17 @@ Non-executable library shared by both binaries. Manifest:
 | File                                               | Purpose                                               | Key items                                                                                                                                                                         |
 | -------------------------------------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [src/lib.rs](../common/src/lib.rs)                 | Crate root, module list, re-exports                   | `pub use` `Task`, `TaskList`                                                                                                                                                      |
-| [src/models/mod.rs](../common/src/models/mod.rs)   | Re-export aggregator                                  | re-exports `Task`                                                                                                                                                                 |
-| [src/models/task.rs](../common/src/models/task.rs) | The task entity (serde)                               | `Task { title, completed }`, `new`, `is_completed`                                                                                                                                |
-| [src/tasklist.rs](../common/src/tasklist.rs)       | In-memory task collection + mutations                 | `TaskList`; `add`/`remove`/`set_completed`/`clear_completed`/`clear`/`total`/`completed`/`open`/`enumerated`                                                                      |
-| [src/storage.rs](../common/src/storage.rs)         | On-disk persistence (JSON)                            | `Config`, `ListEntry`, `TaskListFile`; `list_all`/`load`/`save`/`rename`/`delete`/`import_from`/`export_to`/`load_config`/`save_config`; `app_data_dir`/`lists_dir`/`config_path` |
+| [src/models/mod.rs](../common/src/models/mod.rs)   | Re-export aggregator                                  | re-exports `Task`, `Attachment`, `AttachmentKind`                                                                                                                                |
+| [src/models/task.rs](../common/src/models/task.rs) | The task entity (serde)                               | `Task { title, completed, attachments }`, `new`, `is_completed`                                                                                                                  |
+| [src/models/attachment.rs](../common/src/models/attachment.rs) | Attached-file entity (serde)              | `Attachment { name, path, kind, owned }`, `AttachmentKind { Image, File }`, `is_image`                                                                                            |
+| [src/tasklist.rs](../common/src/tasklist.rs)       | In-memory task collection + mutations                 | `TaskList`; `add`/`add_with_attachments`/`remove`/`set_completed`/`add_attachment`/`remove_attachment`/`clear_completed`/`clear`/`total`/`completed`/`open`/`enumerated`         |
+| [src/attachments.rs](../common/src/attachments.rs) | Attachment filesystem helpers                         | `files_dir`, `is_image`, `copy_into_files`, `attachment_from_path(copy)`, `capture_screenshot` (macOS), `open_path`                                                              |
+| [src/storage.rs](../common/src/storage.rs)         | On-disk persistence (JSON)                            | `Config`, `ListEntry`, `TaskListFile`; `list_all`/`load`/`save`/`rename`/`delete`/`import_from`/`export_to`/`load_config`/`save_config`; `home_dir`/`app_data_dir`/`lists_dir`/`config_path` |
 | [src/hotkey.rs](../common/src/hotkey.rs)           | Serializable hotkey binding (shared via IPC + config) | `HotkeySpec { alt, ctrl, shift, meta, code }`; `default_mini_toggle`, `has_strong_modifier`, `label`, `is_modifier_code`                                                          |
 
-Storage location: `~/Library/Application Support/Taskscape/` — `lists/*.json`
-plus `config.json`.
+Storage location: `~/.taskscape/` — `lists/*.json`, copied attachments under
+`files/`, plus `config.json`. Image attachments (and screenshots) are always
+copied into `files/`; other files link to their original path unless copied.
 
 ## IPC — `src/ipc/` → see [ipc.md](ipc.md)
 
@@ -59,6 +62,7 @@ plus `config.json`.
 | [widgets/t_editable_title.rs](../common/src/widgets/t_editable_title.rs) | `t_editable_title(...)` inline-editable title; `TITLE_INPUT_ID` |
 | [widgets/t_metric_card.rs](../common/src/widgets/t_metric_card.rs)       | `t_metric_card(value, label)`                                   |
 | [widgets/t_small_chip.rs](../common/src/widgets/t_small_chip.rs)         | `t_small_chip(label, accent)`                                   |
+| [widgets/t_attachment.rs](../common/src/widgets/t_attachment.rs)         | `t_attachment_chip(...)` thumbnail/file chip with open + remove |
 
 ## Utils — `src/utils/`
 

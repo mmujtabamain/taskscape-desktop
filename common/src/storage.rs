@@ -1,9 +1,11 @@
 //! On-disk storage for named task lists.
 //!
-//! Each list is its own JSON file under the OS app-data directory
-//! (`~/Library/Application Support/Taskscape/lists/` on macOS). The JSON shape
-//! ([`TaskListFile`]) doubles as the import/export format, so importing a list
-//! is just validating and copying a file in, and exporting is copying one out.
+//! Everything lives under a single hidden home-folder directory,
+//! `~/.taskscape/`: one JSON file per list under `lists/`, copied attachment
+//! files under `files/` (see [`crate::attachments`]), and `config.json`. The
+//! list JSON shape ([`TaskListFile`]) doubles as the import/export format, so
+//! importing a list is just validating and copying a file in, and exporting is
+//! copying one out.
 //!
 //! A small [`Config`] (`config.json`) remembers the last-opened list so the app
 //! can reopen it on the next launch.
@@ -63,14 +65,18 @@ impl Default for Config {
     }
 }
 
-/// The app-data root, created if missing. Falls back to the current directory
-/// only if `$HOME` is somehow unset (should not happen on macOS).
-pub fn app_data_dir() -> PathBuf {
-    let base = std::env::var_os("HOME")
+/// The user's home directory. Prefers `$HOME` (macOS/Linux) and falls back to
+/// `%USERPROFILE%` (Windows), then the temp dir if neither is set.
+pub fn home_dir() -> PathBuf {
+    std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
         .map(PathBuf::from)
-        .map(|home| home.join("Library/Application Support"))
-        .unwrap_or_else(|| std::env::temp_dir());
-    let dir = base.join("Taskscape");
+        .unwrap_or_else(std::env::temp_dir)
+}
+
+/// The app-data root (`~/.taskscape/`), created if missing.
+pub fn app_data_dir() -> PathBuf {
+    let dir = home_dir().join(".taskscape");
     let _ = std::fs::create_dir_all(&dir);
     dir
 }

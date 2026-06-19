@@ -20,10 +20,13 @@ both binaries, so changing a message here means updating both `sync.rs` files.
 | Variant                                    | Direction   | Meaning                                                                                             |
 | ------------------------------------------ | ----------- | --------------------------------------------------------------------------------------------------- |
 | `Hello { list_name, tasks }`               | main → tray | Full-state sync; tray adopts this list wholesale (sent on connect, list switch, and after bulk ops) |
-| `AddTask { title }`                        | both        | Append a task                                                                                       |
+| `AddTask { title, attachments }`           | both        | Append a task (with any composer-staged attachments)                                                |
 | `RemoveTask { index }`                     | both        | Remove task at index                                                                                |
 | `ToggleTaskCompleted { index, completed }` | both        | Set a task's completion                                                                             |
+| `AddAttachment { index, attachment }`      | both        | Append an attachment to the task at index                                                           |
+| `RemoveAttachment { index, attachment_index }` | both    | Remove one attachment from the task at index                                                        |
 | `SetHotkey { hotkey, enabled }`            | main → tray | Live hotkey rebind; tray re-registers immediately                                                   |
+| `SetTheme(mode)`                           | main → tray | Live theme change; mini window follows                                                              |
 | `ShowMain`                                 | tray → main | Bring the main window forward (mini "show app")                                                     |
 | `Shutdown`                                 | tray → main | Tray is quitting                                                                                    |
 | `Bye`                                      | both        | Graceful disconnect                                                                                 |

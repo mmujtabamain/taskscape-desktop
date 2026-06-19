@@ -1,10 +1,13 @@
-use crate::app::{AppElement, Message, Taskscape};
+use crate::app::{AppElement, AttachTarget, Message, Taskscape};
 use common::models::Task;
 use common::thememanager::{empty_state_container, panel_alt_container, tokens};
-use common::widgets::{t_body, t_caption, t_heading, t_icon_button};
+use common::widgets::{
+    t_attachment_chip, t_body, t_caption, t_heading, t_icon_button, t_icon_button_ghost,
+};
 use iced::Alignment;
 use iced::Length;
 use iced::widget::{Space, checkbox, column, container, row, scrollable};
+use lucide_icons::Icon;
 
 impl Taskscape {
     pub(crate) fn task_list_panel(&self) -> AppElement<'_> {
@@ -51,24 +54,56 @@ impl Taskscape {
     fn task_card<'a>(&'a self, index: usize, task: &'a Task) -> AppElement<'a> {
         let palette = tokens(self.theme_mode);
 
+        let title_block = column![
+            t_body(&task.title, 15.0, palette.text_primary),
+            t_caption(
+                if task.completed { "Completed" } else { "Open" },
+                12.0,
+                palette.text_muted,
+            )
+        ]
+        .spacing(1);
+
+        let info: AppElement<'a> = if task.attachments.is_empty() {
+            title_block.into()
+        } else {
+            let chips = task.attachments.iter().enumerate().fold(
+                row![].spacing(6),
+                |chips, (att_index, attachment)| {
+                    chips.push(t_attachment_chip(
+                        self.theme_mode,
+                        attachment,
+                        Message::OpenAttachment(attachment.path.clone()),
+                        Message::RemoveTaskAttachment {
+                            task: index,
+                            attachment: att_index,
+                        },
+                    ))
+                },
+            );
+            column![title_block, chips].spacing(6).into()
+        };
+
         container(
             row![
                 checkbox(task.completed)
                     .on_toggle(move |completed| Message::ToggleTaskCompleted(index, completed))
                     .size(16),
-                column![
-                    t_body(&task.title, 15.0, palette.text_primary),
-                    t_caption(
-                        if task.completed { "Completed" } else { "Open" },
-                        12.0,
-                        palette.text_muted,
-                    )
-                ]
-                .spacing(1),
+                info,
                 Space::new().width(Length::Fill),
+                t_icon_button_ghost(
+                    self.theme_mode,
+                    Icon::Paperclip,
+                    Some(Message::AttachFile(AttachTarget::Task(index))),
+                ),
+                t_icon_button_ghost(
+                    self.theme_mode,
+                    Icon::Camera,
+                    Some(Message::AttachScreenshot(AttachTarget::Task(index))),
+                ),
                 t_icon_button(
                     self.theme_mode,
-                    lucide_icons::Icon::Trash2,
+                    Icon::Trash2,
                     None,
                     Some(Message::RemoveTask(index)),
                 ),

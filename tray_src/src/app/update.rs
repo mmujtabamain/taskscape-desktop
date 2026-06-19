@@ -1,6 +1,7 @@
 use crate::app::tray::TrayCommand;
-use crate::app::{AppTask, Message, TrayApp};
+use crate::app::{AppTask, AttachTarget, Message, TrayApp};
 use common::ipc::IpcMessage;
+use common::models::Attachment;
 use iced::{Task, keyboard, window};
 
 /// The menu bar icon's screen rect (top-left + size, in physical pixels), used
@@ -30,10 +31,12 @@ impl TrayApp {
             Message::AddTask => {
                 let title = self.title_input.trim().to_owned();
                 if !title.is_empty() {
-                    self.tasks.add(title.clone());
+                    let attachments = std::mem::take(&mut self.staged_attachments);
+                    self.tasks
+                        .add_with_attachments(title.clone(), attachments.clone());
                     self.title_input.clear();
                     self.status_message = String::from("Task added.");
-                    self.broadcast(IpcMessage::AddTask { title });
+                    self.broadcast(IpcMessage::AddTask { title, attachments });
                     self.persist_local();
                 }
             }
@@ -44,6 +47,47 @@ impl TrayApp {
                     self.persist_local();
                 }
             }
+            Message::AttachFile(target) => {
+                self.attaching = true;
+                return Self::launch_file_attach_dialog(target, self.modifiers.alt());
+            }
+            Message::FileChosen { target, copy, path } => {
+                self.attaching = false;
+                if let Some(path) = path {
+                    match common::attachments::attachment_from_path(&path, copy) {
+                        Ok(attachment) => self.attach_to_target(target, attachment),
+                        Err(error) => self.status_message = error,
+                    }
+                } else {
+                    self.status_message = String::from("Attachment cancelled.");
+                }
+            }
+            Message::AttachScreenshot(target) => {
+                return Task::perform(
+                    async { common::attachments::capture_screenshot() },
+                    move |result| Message::ScreenshotCaptured { target, result },
+                );
+            }
+            Message::ScreenshotCaptured { target, result } => match result {
+                Ok(attachment) => self.attach_to_target(target, attachment),
+                Err(error) => self.status_message = error,
+            },
+            Message::RemoveTaskAttachment { task, attachment } => {
+                if self.tasks.remove_attachment(task, attachment) {
+                    self.status_message = String::from("Attachment removed.");
+                    self.broadcast(IpcMessage::RemoveAttachment {
+                        index: task,
+                        attachment_index: attachment,
+                    });
+                    self.persist_local();
+                }
+            }
+            Message::RemoveStagedAttachment(index) => {
+                if index < self.staged_attachments.len() {
+                    self.staged_attachments.remove(index);
+                }
+            }
+            Message::OpenAttachment(path) => common::attachments::open_path(&path),
             Message::ToggleTaskCompleted(index, completed) => {
                 if self.tasks.set_completed(index, completed) {
                     self.status_message = if completed {
@@ -124,8 +168,9 @@ impl TrayApp {
                         window::Event::Focused => self.mini_focused = true,
                         // Dismiss like a native popover when focus leaves — but
                         // only after it has been focused, so the transient unfocus
-                        // during open doesn't close it instantly.
-                        window::Event::Unfocused if self.mini_focused => {
+                        // during open doesn't close it instantly, and not while a
+                        // file-attach dialog has taken focus.
+                        window::Event::Unfocused if self.mini_focused && !self.attaching => {
                             self.mini_window_id = None;
                             self.mini_focused = false;
                             self.status_message = String::from("Mini window closed.");
@@ -214,6 +259,12 @@ impl TrayApp {
             }
             Message::IpcEvent(event) => return self.handle_ipc(event),
             Message::KeyboardEvent(event) => {
+                // Track modifier state so attach actions can read whether
+                // Option/Alt is held (link vs. copy) at press time.
+                if let keyboard::Event::ModifiersChanged(modifiers) = &event {
+                    self.modifiers = *modifiers;
+                    return Task::none();
+                }
                 if let keyboard::Event::KeyPressed { key, .. } = event {
                     use iced::keyboard::Key;
                     if matches!(key.as_ref(), Key::Named(iced::keyboard::key::Named::Escape)) {
@@ -230,6 +281,40 @@ impl TrayApp {
         }
 
         Task::none()
+    }
+
+    /// Attaches a file/screenshot to the given target. For a task it mirrors the
+    /// change over IPC and persists; for the composer it just stages it.
+    fn attach_to_target(&mut self, target: AttachTarget, attachment: Attachment) {
+        match target {
+            AttachTarget::Composer => {
+                self.staged_attachments.push(attachment);
+                self.status_message = String::from("Attachment staged.");
+            }
+            AttachTarget::Task(index) => {
+                if self.tasks.add_attachment(index, attachment.clone()) {
+                    self.status_message = String::from("Attachment added.");
+                    self.broadcast(IpcMessage::AddAttachment { index, attachment });
+                    self.persist_local();
+                }
+            }
+        }
+    }
+
+    /// Opens the native file picker to attach a file to `target`. `copy`
+    /// (captured from the Option/Alt modifier at press time) forces a copy into
+    /// Taskscape rather than linking to the original.
+    fn launch_file_attach_dialog(target: AttachTarget, copy: bool) -> AppTask {
+        Task::perform(
+            async {
+                let handle = rfd::AsyncFileDialog::new()
+                    .set_title("Attach File")
+                    .pick_file()
+                    .await;
+                handle.map(|h| h.path().to_path_buf())
+            },
+            move |path| Message::FileChosen { target, copy, path },
+        )
     }
 
     /// Opens the quit-confirmation popover window (or focuses it if already up).

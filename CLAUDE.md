@@ -51,8 +51,10 @@ cargo check                              # fast type-check
 - **IPC asymmetry:** the main app is the source of truth and sends its full list
   on connect (`Hello`); the tray mirrors it. Both sides guard against echo loops
   with an `applying_remote` flag. Protocol: [common/src/ipc/](common/src/ipc/).
-- **Persistence:** lists + config are JSON under
-  `~/Library/Application Support/Taskscape/` (see [common/src/storage.rs](common/src/storage.rs)).
+- **Persistence:** lists + config are JSON under `~/.taskscape/` (`lists/*.json`,
+  `config.json`; see [common/src/storage.rs](common/src/storage.rs)). Copied task
+  attachments live in `~/.taskscape/files/` (see
+  [common/src/attachments.rs](common/src/attachments.rs)).
 
 ## Conventions
 

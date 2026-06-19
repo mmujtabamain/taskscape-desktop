@@ -12,7 +12,7 @@ pub mod client;
 pub mod server;
 
 use crate::hotkey::HotkeySpec;
-use crate::models::Task;
+use crate::models::{Attachment, Task};
 use crate::thememanager::ThemeMode;
 use serde::{Deserialize, Serialize};
 use std::io::{self, BufRead, Write};
@@ -42,12 +42,24 @@ pub enum IpcMessage {
         list_name: Option<String>,
         tasks: Vec<Task>,
     },
-    /// A task was added with this title (appended to the end of the list).
-    AddTask { title: String },
+    /// A task was added with this title and attachments (appended to the end).
+    /// `attachments` is usually empty; it carries any composer-staged files.
+    AddTask {
+        title: String,
+        #[serde(default)]
+        attachments: Vec<Attachment>,
+    },
     /// The task at `index` was removed.
     RemoveTask { index: usize },
     /// The task at `index` had its completed flag set to `completed`.
     ToggleTaskCompleted { index: usize, completed: bool },
+    /// An attachment was added to the task at `index`.
+    AddAttachment { index: usize, attachment: Attachment },
+    /// The attachment at `attachment_index` was removed from the task at `index`.
+    RemoveAttachment {
+        index: usize,
+        attachment_index: usize,
+    },
     /// Sent by the **main app** when the user changes the mini-window hotkey in
     /// settings: the tray re-registers it live. `hotkey` is `None` to use the
     /// built-in default; `enabled` toggles the binding off entirely.

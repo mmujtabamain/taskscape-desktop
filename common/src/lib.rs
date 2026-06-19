@@ -7,6 +7,7 @@
 
 #![warn(unreachable_pub)]
 
+pub mod attachments;
 pub mod hotkey;
 pub mod ipc;
 pub mod models;

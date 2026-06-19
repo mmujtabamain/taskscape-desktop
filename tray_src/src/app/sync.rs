@@ -69,14 +69,23 @@ impl TrayApp {
                 self.tasks.replace(tasks);
                 self.status_message = String::from("Synced from Taskscape.");
             }
-            IpcMessage::AddTask { title } => {
-                self.tasks.add(title);
+            IpcMessage::AddTask { title, attachments } => {
+                self.tasks.add_with_attachments(title, attachments);
             }
             IpcMessage::RemoveTask { index } => {
                 self.tasks.remove(index);
             }
             IpcMessage::ToggleTaskCompleted { index, completed } => {
                 self.tasks.set_completed(index, completed);
+            }
+            IpcMessage::AddAttachment { index, attachment } => {
+                self.tasks.add_attachment(index, attachment);
+            }
+            IpcMessage::RemoveAttachment {
+                index,
+                attachment_index,
+            } => {
+                self.tasks.remove_attachment(index, attachment_index);
             }
             // The main app changed the mini-window hotkey in settings: re-register
             // it live. Runs on the UI thread (update → handle_ipc), which is where

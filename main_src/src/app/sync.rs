@@ -74,10 +74,29 @@ impl Taskscape {
         let mut task = iced::Task::none();
 
         match message {
-            IpcMessage::AddTask { title } => self.add_task_with_title(title),
+            IpcMessage::AddTask { title, attachments } => self.add_task_with(title, attachments),
             IpcMessage::RemoveTask { index } => self.remove_task(index),
             IpcMessage::ToggleTaskCompleted { index, completed } => {
                 self.toggle_task_completed(index, completed)
+            }
+            IpcMessage::AddAttachment { index, attachment } => {
+                self.push_history();
+                if self.tasks.add_attachment(index, attachment) {
+                    self.persist_current();
+                } else {
+                    self.undo_stack.pop();
+                }
+            }
+            IpcMessage::RemoveAttachment {
+                index,
+                attachment_index,
+            } => {
+                self.push_history();
+                if self.tasks.remove_attachment(index, attachment_index) {
+                    self.persist_current();
+                } else {
+                    self.undo_stack.pop();
+                }
             }
             // The tray asks us to come forward and open the list sidebar so the
             // user can switch lists.

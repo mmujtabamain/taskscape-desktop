@@ -14,8 +14,10 @@ relative to the repo root. Deeper file detail: [common.md](common.md),
 | Goal                                                          | Edit                                                                                                     |
 | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | Change the `Task` shape (fields, defaults)                    | [common/src/models/task.rs](../common/src/models/task.rs) (+ persistence in storage.rs, + IPC if synced) |
-| Task collection ops (add/remove/toggle/clear/counts)          | [common/src/tasklist.rs](../common/src/tasklist.rs)                                                      |
-| How/where lists & config are saved on disk                    | [common/src/storage.rs](../common/src/storage.rs)                                                        |
+| Attachment model / image-vs-file kind                         | [common/src/models/attachment.rs](../common/src/models/attachment.rs)                                    |
+| Attachment files: copy/link/screenshot/open helpers           | [common/src/attachments.rs](../common/src/attachments.rs) (writes to `~/.taskscape/files/`)              |
+| Task collection ops (add/remove/toggle/clear/attach/counts)   | [common/src/tasklist.rs](../common/src/tasklist.rs)                                                      |
+| How/where lists, attachments & config are saved on disk       | [common/src/storage.rs](../common/src/storage.rs) (`~/.taskscape/`)                                      |
 | Main-window task actions (add/clear/undo/redo, import/export) | [main_src/src/app/actions.rs](../main_src/src/app/actions.rs)                                            |
 | Undo/redo snapshot contents                                   | [main_src/src/app/snapshot.rs](../main_src/src/app/snapshot.rs)                                          |
 | Counts shown in the UI                                        | [main_src/src/app/queries.rs](../main_src/src/app/queries.rs)                                            |
@@ -27,8 +29,9 @@ relative to the repo root. Deeper file detail: [common.md](common.md),
 | Overall layout (sidebar + content + status bar + modals)      | [main_src/src/app/view/mod.rs](../main_src/src/app/view/mod.rs)                                                     |
 | Top header of an open list (title, controls)                  | [main_src/src/app/view/header.rs](../main_src/src/app/view/header.rs)                                               |
 | Sidebar list rail/panel, rename/clear-all modals, empty state | [main_src/src/app/view/lists.rs](../main_src/src/app/view/lists.rs)                                                 |
-| Task composer + actions row                                   | [main_src/src/app/view/tasks.rs](../main_src/src/app/view/tasks.rs)                                                 |
-| Task cards / scroll list                                      | [main_src/src/app/view/workspace.rs](../main_src/src/app/view/workspace.rs)                                         |
+| Task composer + actions row (incl. attach/screenshot buttons) | [main_src/src/app/view/tasks.rs](../main_src/src/app/view/tasks.rs)                                                 |
+| Task cards / scroll list (incl. per-task attach buttons+chips) | [main_src/src/app/view/workspace.rs](../main_src/src/app/view/workspace.rs)                                        |
+| Attach-file/screenshot logic (both apps)                      | `app/update.rs` + main's [actions.rs](../main_src/src/app/actions.rs) (`attach_to_target`, `launch_file_attach_dialog`); chip widget [t_attachment.rs](../common/src/widgets/t_attachment.rs) |
 | Settings page                                                 | [main_src/src/app/view/settings.rs](../main_src/src/app/view/settings.rs)                                           |
 | Add a new `Message` / route an event                          | [main_src/src/app/mod.rs](../main_src/src/app/mod.rs) (enum) + [update.rs](../main_src/src/app/update.rs) (handler) |
 | Keyboard shortcuts (Cmd+Z/E/O/N/L/T, Esc)                     | [main_src/src/app/update.rs](../main_src/src/app/update.rs)                                                         |

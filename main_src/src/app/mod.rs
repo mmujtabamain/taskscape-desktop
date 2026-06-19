@@ -10,6 +10,7 @@ mod update;
 mod view;
 
 use common::hotkey::HotkeySpec;
+use common::models::Attachment;
 use common::storage::ListEntry;
 use common::tasklist::TaskList;
 use common::thememanager::{ThemeMode, app_theme};
@@ -22,6 +23,14 @@ pub use launch::ensure_tray_running;
 pub type AppElement<'a> = iced::Element<'a, Message>;
 pub type AppTask = iced::Task<Message>;
 
+/// What an attach action targets: an existing task by index, or the composer
+/// (staged onto the next task created with Enter).
+#[derive(Debug, Clone, Copy)]
+pub enum AttachTarget {
+    Task(usize),
+    Composer,
+}
+
 #[derive(Debug, Clone)]
 pub enum Message {
     FontLoaded,
@@ -30,6 +39,31 @@ pub enum Message {
     ToggleTaskCompleted(usize, bool),
     RemoveTask(usize),
     AddTask,
+    // --- Attachments ---
+    /// Open the file picker to attach a file to the given target. Holding the
+    /// Option/Alt key while pressing copies the file into Taskscape instead of
+    /// linking to the original (images always copy).
+    AttachFile(AttachTarget),
+    /// The file picker returned (or was cancelled). `copy` is captured from the
+    /// modifier state at press time.
+    FileChosen {
+        target: AttachTarget,
+        copy: bool,
+        path: Option<PathBuf>,
+    },
+    /// Capture a full-screen screenshot and attach it to the given target.
+    AttachScreenshot(AttachTarget),
+    /// The screenshot capture finished.
+    ScreenshotCaptured {
+        target: AttachTarget,
+        result: Result<Attachment, String>,
+    },
+    /// Remove the attachment at `attachment` from the task at `task`.
+    RemoveTaskAttachment { task: usize, attachment: usize },
+    /// Remove the composer-staged attachment at this index.
+    RemoveStagedAttachment(usize),
+    /// Open an attachment in the OS default app.
+    OpenAttachment(PathBuf),
     ClearCompleted,
     /// Entry point for "Clear all": either clears immediately or opens the
     /// confirmation modal, depending on the `confirm_clear_all` setting.
@@ -100,6 +134,11 @@ pub struct Taskscape {
     pub(crate) window_id: Option<window::Id>,
     pub(crate) theme_mode: ThemeMode,
     pub(crate) title_input: String,
+    /// Attachments staged in the composer, applied to the next task added.
+    pub(crate) staged_attachments: Vec<Attachment>,
+    /// Latest keyboard modifier state, so attach actions can read whether
+    /// Option/Alt was held at press time (link vs. copy).
+    pub(crate) modifiers: keyboard::Modifiers,
     pub(crate) status_message: String,
     pub(crate) undo_stack: Vec<snapshot::AppSnapshot>,
     pub(crate) redo_stack: Vec<snapshot::AppSnapshot>,
@@ -143,6 +182,8 @@ impl Default for Taskscape {
             window_id: None,
             theme_mode: ThemeMode::Dark,
             title_input: String::new(),
+            staged_attachments: Vec::new(),
+            modifiers: keyboard::Modifiers::default(),
             status_message: String::from("Ready."),
             undo_stack: Vec::new(),
             redo_stack: Vec::new(),

@@ -1,4 +1,5 @@
 pub mod lucide_icon;
+pub mod t_attachment;
 pub mod t_button;
 pub mod t_dropdown;
 pub mod t_editable_title;
@@ -10,6 +11,7 @@ pub mod t_typography;
 
 use iced::widget::container;
 pub use lucide_icon::lucide_icon;
+pub use t_attachment::t_attachment_chip;
 pub use t_button::t_button;
 pub use t_dropdown::t_dropdown;
 pub use t_editable_title::t_editable_title;

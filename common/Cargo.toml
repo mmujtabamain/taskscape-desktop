@@ -11,7 +11,8 @@ name = "common"
 path = "src/lib.rs"
 
 [dependencies]
-iced = "0.14"
+# `image` enables the `image` widget used to render attachment thumbnails.
+iced = { version = "0.14", features = ["image"] }
 lucide-icons = { version = "1.14.0", features = ["iced"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"

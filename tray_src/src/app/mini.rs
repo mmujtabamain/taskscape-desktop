@@ -5,13 +5,16 @@
 //! header (clickable list title + quit), a one-line composer, a bordered panel
 //! holding the scrollable task list, and a thin footer showing the link status.
 
-use crate::app::{AppElement, Message, TrayApp};
+use crate::app::{AppElement, AttachTarget, Message, TrayApp};
 use common::models::Task;
 use common::thememanager::{
     ButtonKind, button_style, empty_state_container, mini_shell_container, panel_alt_container,
     text_input_style, tokens,
 };
-use common::widgets::{lucide_icon, t_body, t_button, t_caption, t_heading, t_icon_button};
+use common::widgets::{
+    lucide_icon, t_attachment_chip, t_body, t_button, t_caption, t_heading, t_icon_button,
+    t_icon_button_ghost,
+};
 use iced::widget::{Space, button, checkbox, column, container, mouse_area, row, scrollable, text_input};
 use iced::{Alignment, Length};
 use lucide_icons::Icon;
@@ -90,8 +93,40 @@ impl TrayApp {
             .on_submit(Message::AddTask)
             .style(text_input_style(self.theme_mode));
 
-        column![row![input,].spacing(6).align_y(Alignment::Center)]
-            .spacing(3)
+        let input_row = row![
+            input,
+            t_icon_button_ghost(
+                self.theme_mode,
+                Icon::Paperclip,
+                Some(Message::AttachFile(AttachTarget::Composer)),
+            ),
+            t_icon_button_ghost(
+                self.theme_mode,
+                Icon::Camera,
+                Some(Message::AttachScreenshot(AttachTarget::Composer)),
+            ),
+        ]
+        .spacing(4)
+        .align_y(Alignment::Center);
+
+        let mut composer = column![input_row].spacing(4);
+
+        if !self.staged_attachments.is_empty() {
+            let chips = self.staged_attachments.iter().enumerate().fold(
+                row![].spacing(4),
+                |chips, (index, attachment)| {
+                    chips.push(t_attachment_chip(
+                        self.theme_mode,
+                        attachment,
+                        Message::OpenAttachment(attachment.path.clone()),
+                        Message::RemoveStagedAttachment(index),
+                    ))
+                },
+            );
+            composer = composer.push(chips);
+        }
+
+        composer
             .push(
                 row![
                     lucide_icon(Icon::CornerDownLeft, 11.0, palette.text_muted),
@@ -145,26 +180,56 @@ impl TrayApp {
     fn mini_task_row<'a>(&'a self, index: usize, task: &'a Task) -> AppElement<'a> {
         let palette = tokens(self.theme_mode);
 
-        container(
-            row![
-                // Completion toggles only via the checkbox.
-                checkbox(task.completed)
-                    .on_toggle(move |c| Message::ToggleTaskCompleted(index, c))
-                    .size(16),
-                t_body(&task.title, 14.0, palette.text_primary).width(Length::Fill),
-                t_icon_button(
-                    self.theme_mode,
-                    Icon::Trash2,
-                    None,
-                    Some(Message::RemoveTask(index)),
-                ),
-            ]
-            .align_y(Alignment::Center)
-            .spacing(8),
-        )
-        .padding([5, 8])
-        .style(panel_alt_container(self.theme_mode))
-        .into()
+        let top = row![
+            // Completion toggles only via the checkbox.
+            checkbox(task.completed)
+                .on_toggle(move |c| Message::ToggleTaskCompleted(index, c))
+                .size(16),
+            t_body(&task.title, 14.0, palette.text_primary).width(Length::Fill),
+            t_icon_button_ghost(
+                self.theme_mode,
+                Icon::Paperclip,
+                Some(Message::AttachFile(AttachTarget::Task(index))),
+            ),
+            t_icon_button_ghost(
+                self.theme_mode,
+                Icon::Camera,
+                Some(Message::AttachScreenshot(AttachTarget::Task(index))),
+            ),
+            t_icon_button(
+                self.theme_mode,
+                Icon::Trash2,
+                None,
+                Some(Message::RemoveTask(index)),
+            ),
+        ]
+        .align_y(Alignment::Center)
+        .spacing(6);
+
+        let mut card = column![top].spacing(5);
+
+        if !task.attachments.is_empty() {
+            let chips = task.attachments.iter().enumerate().fold(
+                row![].spacing(4),
+                |chips, (att_index, attachment)| {
+                    chips.push(t_attachment_chip(
+                        self.theme_mode,
+                        attachment,
+                        Message::OpenAttachment(attachment.path.clone()),
+                        Message::RemoveTaskAttachment {
+                            task: index,
+                            attachment: att_index,
+                        },
+                    ))
+                },
+            );
+            card = card.push(chips);
+        }
+
+        container(card)
+            .padding([5, 8])
+            .style(panel_alt_container(self.theme_mode))
+            .into()
     }
 
     /// Thin footer: link status with a coloured dot + total task count on the

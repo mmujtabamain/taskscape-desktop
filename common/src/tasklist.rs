@@ -4,7 +4,7 @@
 //! count queries, so the main window and the tray service apply identical
 //! semantics (which is what keeps their indices aligned across the IPC link).
 
-use crate::models::Task;
+use crate::models::{Attachment, Task};
 
 #[derive(Debug, Clone, Default)]
 pub struct TaskList {
@@ -41,6 +41,48 @@ impl TaskList {
         }
         self.tasks.push(Task::new(title.clone()));
         Some(title)
+    }
+
+    /// Appends a task with the given title and attachments. No-ops on a blank
+    /// title. Returns the trimmed title that was added (for IPC mirroring), or
+    /// `None` if nothing was added.
+    pub fn add_with_attachments(
+        &mut self,
+        title: impl Into<String>,
+        attachments: Vec<Attachment>,
+    ) -> Option<String> {
+        let title = title.into().trim().to_owned();
+        if title.is_empty() {
+            return None;
+        }
+        let mut task = Task::new(title.clone());
+        task.attachments = attachments;
+        self.tasks.push(task);
+        Some(title)
+    }
+
+    /// Appends `attachment` to the task at `index`, if it exists. Returns whether
+    /// anything was added.
+    pub fn add_attachment(&mut self, index: usize, attachment: Attachment) -> bool {
+        match self.tasks.get_mut(index) {
+            Some(task) => {
+                task.attachments.push(attachment);
+                true
+            }
+            None => false,
+        }
+    }
+
+    /// Removes the attachment at `attachment_index` from the task at `index`, if
+    /// both exist. Returns whether anything was removed.
+    pub fn remove_attachment(&mut self, index: usize, attachment_index: usize) -> bool {
+        match self.tasks.get_mut(index) {
+            Some(task) if attachment_index < task.attachments.len() => {
+                task.attachments.remove(attachment_index);
+                true
+            }
+            _ => false,
+        }
     }
 
     /// Removes the task at `index`, if it exists. Returns whether anything was

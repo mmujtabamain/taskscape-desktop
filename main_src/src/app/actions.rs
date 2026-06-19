@@ -1,5 +1,7 @@
 use crate::app::snapshot::AppSnapshot;
-use crate::app::{AppTask, Message, Taskscape};
+use crate::app::{AppTask, AttachTarget, Message, Taskscape};
+use common::ipc::IpcMessage;
+use common::models::Attachment;
 use common::storage;
 use iced::Task;
 use std::path::PathBuf;
@@ -40,34 +42,92 @@ impl Taskscape {
 
     // --- Task mutations (each autosaves the open list) ---
 
-    /// Adds the task currently in the composer input. Returns the added title so
-    /// the caller can mirror it to the tray service over IPC, or `None` if the
-    /// input was empty (nothing added).
-    pub(crate) fn add_task(&mut self) -> Option<String> {
+    /// Adds the task currently in the composer input, with any staged
+    /// attachments. Returns the added title + attachments so the caller can
+    /// mirror them to the tray service over IPC, or `None` if the input was
+    /// empty (nothing added).
+    pub(crate) fn add_task(&mut self) -> Option<(String, Vec<Attachment>)> {
         let title = self.title_input.trim().to_owned();
         if title.is_empty() {
             return None;
         }
 
         self.push_history();
-        let added = self.tasks.add(title);
+        let attachments = std::mem::take(&mut self.staged_attachments);
+        let added = self
+            .tasks
+            .add_with_attachments(title, attachments.clone())?;
 
         self.title_input.clear();
         self.status_message = String::from("Task added.");
         self.persist_current();
-        added
+        Some((added, attachments))
     }
 
-    /// Appends a task with an explicit title (used when applying the tray
-    /// service's add over IPC).
-    pub(crate) fn add_task_with_title(&mut self, title: String) {
+    /// Appends a task with an explicit title + attachments (used when applying
+    /// the tray service's add over IPC).
+    pub(crate) fn add_task_with(&mut self, title: String, attachments: Vec<Attachment>) {
         if title.trim().is_empty() {
             return;
         }
         self.push_history();
-        self.tasks.add(title);
+        self.tasks.add_with_attachments(title, attachments);
         self.status_message = String::from("Task added.");
         self.persist_current();
+    }
+
+    /// Attaches a file (chosen from the picker, already turned into an
+    /// [`Attachment`]) or screenshot to the given target. For a task it pushes
+    /// history, persists, and mirrors over IPC; for the composer it just stages.
+    pub(crate) fn attach_to_target(&mut self, target: AttachTarget, attachment: Attachment) {
+        match target {
+            AttachTarget::Composer => {
+                self.staged_attachments.push(attachment);
+                self.status_message = String::from("Attachment staged.");
+            }
+            AttachTarget::Task(index) => {
+                self.push_history();
+                if self.tasks.add_attachment(index, attachment.clone()) {
+                    self.status_message = String::from("Attachment added.");
+                    self.persist_current();
+                    self.broadcast(IpcMessage::AddAttachment { index, attachment });
+                } else {
+                    self.undo_stack.pop();
+                }
+            }
+        }
+    }
+
+    /// Removes the attachment at `attachment` from the task at `task`,
+    /// persisting and mirroring over IPC.
+    pub(crate) fn remove_task_attachment(&mut self, task: usize, attachment: usize) {
+        self.push_history();
+        if self.tasks.remove_attachment(task, attachment) {
+            self.status_message = String::from("Attachment removed.");
+            self.persist_current();
+            self.broadcast(IpcMessage::RemoveAttachment {
+                index: task,
+                attachment_index: attachment,
+            });
+        } else {
+            self.undo_stack.pop();
+        }
+    }
+
+    /// Opens the native file picker to attach a file to `target`. `copy`
+    /// (captured from the Option/Alt modifier at press time) forces a copy into
+    /// Taskscape rather than linking to the original.
+    pub(crate) fn launch_file_attach_dialog(target: AttachTarget, copy: bool) -> AppTask {
+        Task::perform(
+            async {
+                let handle = rfd::AsyncFileDialog::new()
+                    .set_title("Attach File")
+                    .pick_file()
+                    .await;
+                handle.map(|h| h.path().to_path_buf())
+            },
+            move |path| Message::FileChosen { target, copy, path },
+        )
     }
 
     pub(crate) fn remove_task(&mut self, index: usize) {
