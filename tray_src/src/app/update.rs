@@ -280,7 +280,11 @@ impl TrayApp {
         self.mini_window_id = Some(id);
         self.mini_focused = false;
         self.status_message = String::from("Mini window opened.");
-        Task::batch([open.map(Message::WindowOpened), window::gain_focus(id)])
+        // Deliberately no `gain_focus` here: it activates the app, and doing that
+        // *before* `WindowOpened` marks the window `canJoinAllSpaces` makes macOS
+        // switch Spaces away from a full-screen app (so the window never lands on
+        // it). Activation happens in `focus_window`, after `pin_over_spaces`.
+        open.map(Message::WindowOpened)
     }
 
     /// Computes a window position (in logical points) that places the mini
