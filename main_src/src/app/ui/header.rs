@@ -1,77 +1,75 @@
 use crate::app::{AppElement, Message, Taskscape};
-use common::thememanager::{ThemeMode, panel_alt_container, tokens};
-use common::widgets::{t_body, t_heading, t_icon_button};
+use common::ui::tokens::{space, text};
+use common::ui::{Icon, ThemeMode, divider, palette, t_body, t_heading, t_icon_button};
 use iced::Alignment;
 use iced::Length;
 use iced::widget::{Space, column, container, row};
-use lucide_icons::Icon;
 
 impl Taskscape {
     pub(crate) fn header(&self) -> AppElement<'_> {
-        let palette = tokens(self.theme_mode);
+        let p = palette(self.theme_mode);
 
         let list_name = self.current_list.as_deref().unwrap_or("No list open");
 
         let controls = row![
             t_icon_button(
                 self.theme_mode,
-                Icon::PanelLeft,
+                Icon::PanelToggle,
                 None,
                 Some(Message::ToggleListPanel),
             ),
             t_icon_button(self.theme_mode, Icon::Import, None, Some(Message::ImportList)),
-            t_icon_button(self.theme_mode, Icon::Upload, None, Some(Message::ExportList)),
+            t_icon_button(self.theme_mode, Icon::Export, None, Some(Message::ExportList)),
             t_icon_button(
                 self.theme_mode,
                 if self.theme_mode == ThemeMode::Dark {
-                    Icon::Sun
+                    Icon::ThemeLight
                 } else {
-                    Icon::Moon
+                    Icon::ThemeDark
                 },
                 None,
                 Some(Message::ToggleTheme),
             ),
             t_icon_button(
                 self.theme_mode,
-                Icon::Undo2,
+                Icon::Undo,
                 Some(self.undo_stack.len() as u32),
                 Some(Message::EditUndo),
             ),
             t_icon_button(
                 self.theme_mode,
-                Icon::Redo2,
+                Icon::Redo,
                 Some(self.redo_stack.len() as u32),
                 Some(Message::EditRedo),
             ),
         ]
-        .spacing(6)
+        .spacing(space::SM)
         .align_y(Alignment::Center);
 
         column![
             row![
-                {
-                    let title_section = column![
-                        t_heading(list_name, 26.0, palette.text_primary),
+                container(
+                    column![
+                        t_heading(list_name, text::HEADING, p.text),
                         t_body(
                             format!("{} tasks in this list", self.total_count()),
-                            13.0,
-                            palette.text_muted,
+                            text::SMALL,
+                            p.text_muted,
                         ),
                     ]
-                    .spacing(2)
-                    .width(Length::Fill);
-
-                    container(title_section).width(Length::Fill)
-                },
+                    .spacing(space::XS)
+                    .width(Length::Fill)
+                )
+                .width(Length::Fill),
                 controls,
             ]
-            .spacing(12)
+            .spacing(space::LG)
             .align_y(Alignment::Center),
             container(Space::new().height(Length::Fixed(1.0)))
                 .width(Length::Fill)
-                .style(panel_alt_container(self.theme_mode)),
+                .style(divider(self.theme_mode)),
         ]
-        .spacing(10)
+        .spacing(space::LG)
         .into()
     }
 }

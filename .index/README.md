@@ -32,14 +32,14 @@ taskscape-desktop/
 ├── TODO.md
 ├── .index/               # ← you are here
 ├── common/               # taskscape-common  (shared lib)   → common.md
-│   └── src/{ipc,models,thememanager,utils,widgets}/, storage.rs, tasklist.rs, hotkey.rs
+│   └── src/{ipc,models,ui,utils}/, storage.rs, tasklist.rs, hotkey.rs
 ├── main_src/             # taskscape         (main window)   → main.md
-│   ├── src/app/{view/,update,actions,queries,snapshot,sync,launch,native_menu}
+│   ├── src/app/{ui/,update,actions,queries,snapshot,sync,launch,native_menu}
 │   └── macos/Info.plist
 ├── tray_src/             # taskscape-tray    (menu-bar svc)  → tray.md
-│   ├── src/app/{mini,tray,hotkey,sync,update,launch}
+│   ├── src/app/{ui/,tray,hotkey,sync,update,launch}
 │   └── macos/Info.plist  # LSUIElement = true (no Dock icon)
-├── assets/fonts/         # Inter + Poppins TTFs (embedded into binaries)
+├── assets/fonts/         # Montserrat + Raleway + Material Symbols Sharp (embedded)
 ├── target/               # build output — ignore when searching
 └── dist/                 # packaged Taskscape.app — ignore when searching
 ```

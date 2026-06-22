@@ -3,29 +3,24 @@
 //! hotkey is captured live and pushed to the tray service.
 
 use crate::app::{AppElement, Message, Taskscape};
-use common::thememanager::helpers::border;
-use common::thememanager::{
-    ButtonKind, ThemeMode, empty_state_container, panel_alt_container, tokens,
+use common::ui::tokens::{radius, space, text};
+use common::ui::{
+    ButtonKind, Icon, ThemeMode, border, palette, surface, t_body, t_button, t_caption, t_dropdown,
+    t_heading, t_toggle,
 };
-use common::widgets::{t_body, t_button, t_caption, t_dropdown, t_heading};
-use iced::widget::{column, container, row, scrollable, toggler};
+use iced::widget::{column, container, row, scrollable};
 use iced::{Alignment, Length};
-use lucide_icons::Icon;
 
 impl Taskscape {
     pub(crate) fn settings_view(&self) -> AppElement<'_> {
-        let palette = tokens(self.theme_mode);
+        let p = palette(self.theme_mode);
 
         let header = row![
             column![
-                t_heading("Settings", 26.0, palette.text_primary),
-                t_body(
-                    "Changes are saved automatically.",
-                    13.0,
-                    palette.text_muted,
-                ),
+                t_heading("Settings", text::HEADING, p.text),
+                t_body("Changes are saved automatically.", text::SMALL, p.text_muted),
             ]
-            .spacing(2)
+            .spacing(space::XS)
             .width(Length::Fill),
             t_button(
                 self.theme_mode,
@@ -36,75 +31,60 @@ impl Taskscape {
             ),
         ]
         .align_y(Alignment::Center)
-        .spacing(12);
+        .spacing(space::LG);
 
         let sections = column![
-            self.settings_section(
-                "Appearance",
-                column![self.theme_setting()].spacing(8).into(),
-            ),
+            self.settings_section("Appearance", column![self.theme_setting(), self.motion_setting()].spacing(space::MD).into()),
             self.settings_section(
                 "Mini window",
-                column![self.hotkey_setting(), self.hotkey_enabled_setting()]
-                    .spacing(8)
-                    .into(),
+                column![self.hotkey_setting(), self.hotkey_enabled_setting()].spacing(space::MD).into(),
             ),
             self.settings_section(
                 "General",
-                column![self.reopen_setting(), self.confirm_clear_setting()]
-                    .spacing(8)
-                    .into(),
+                column![self.reopen_setting(), self.confirm_clear_setting()].spacing(space::MD).into(),
             ),
         ]
-        .spacing(18);
+        .spacing(space::XL + 2.0);
 
         let body = container(scrollable(sections).height(Length::Fill))
             .width(Length::Fill)
             .height(Length::Fill)
-            .padding(14)
-            .style(empty_state_container(self.theme_mode));
+            .padding(space::XL)
+            .style(surface(self.theme_mode));
 
-        column![header, body]
-            .spacing(12)
-            .height(Length::Fill)
+        column![header, body].spacing(space::LG).height(Length::Fill).into()
+    }
+
+    fn settings_section<'a>(&self, title: &'a str, rows: AppElement<'a>) -> AppElement<'a> {
+        let p = palette(self.theme_mode);
+        column![t_caption(title.to_uppercase(), text::CAPTION, p.text_muted), rows]
+            .spacing(space::MD)
             .into()
     }
 
-    /// A titled group of setting rows.
-    fn settings_section<'a>(&self, title: &'a str, rows: AppElement<'a>) -> AppElement<'a> {
-        let palette = tokens(self.theme_mode);
-        column![
-            t_caption(title.to_uppercase(), 11.0, palette.text_muted),
-            rows,
-        ]
-        .spacing(8)
-        .into()
-    }
-
-    /// One setting: a label + description on the left, its control on the right.
     fn setting_row<'a>(
         &self,
         title: &'a str,
         description: &'a str,
         control: AppElement<'a>,
     ) -> AppElement<'a> {
-        let palette = tokens(self.theme_mode);
+        let p = palette(self.theme_mode);
         container(
             row![
                 column![
-                    t_body(title, 15.0, palette.text_primary),
-                    t_caption(description, 12.0, palette.text_muted),
+                    t_body(title, text::BODY, p.text),
+                    t_caption(description, text::LABEL, p.text_muted),
                 ]
-                .spacing(2)
+                .spacing(space::XS)
                 .width(Length::Fill),
                 control,
             ]
             .align_y(Alignment::Center)
-            .spacing(12),
+            .spacing(space::LG),
         )
         .width(Length::Fill)
         .padding([12, 14])
-        .style(panel_alt_container(self.theme_mode))
+        .style(common::ui::raised(self.theme_mode))
         .into()
     }
 
@@ -119,6 +99,19 @@ impl Taskscape {
         self.setting_row("Theme", "Switch between light and dark.", control)
     }
 
+    fn motion_setting(&self) -> AppElement<'_> {
+        let control = t_toggle(
+            self.theme_mode,
+            self.reduce_motion,
+            Message::SetReduceMotion(!self.reduce_motion),
+        );
+        self.setting_row(
+            "Reduce motion",
+            "Collapse animations to instant transitions.",
+            control,
+        )
+    }
+
     fn hotkey_setting(&self) -> AppElement<'_> {
         self.setting_row(
             "Show mini window",
@@ -127,14 +120,12 @@ impl Taskscape {
         )
     }
 
-    /// The hotkey control: while recording, a prompt + Cancel; otherwise the
-    /// current binding as a chip plus Change / Reset.
     fn hotkey_control(&self) -> AppElement<'_> {
-        let palette = tokens(self.theme_mode);
+        let p = palette(self.theme_mode);
 
         if self.recording_hotkey {
             return row![
-                t_body("Press keys…  (Esc to cancel)", 14.0, palette.accent),
+                t_body("Press keys…  (Esc to cancel)", text::BODY, p.accent),
                 t_button(
                     self.theme_mode,
                     None,
@@ -143,17 +134,17 @@ impl Taskscape {
                     Some(Message::CancelRecordHotkey),
                 ),
             ]
-            .spacing(10)
+            .spacing(space::LG)
             .align_y(Alignment::Center)
             .into();
         }
 
-        let chip = container(t_body(self.hotkey.label(), 15.0, palette.text_primary))
+        let chip = container(t_body(self.hotkey.label(), text::BODY, p.text))
             .padding([6, 12])
             .style(move |_theme: &iced::Theme| {
                 iced::widget::container::Style::default()
-                    .background(palette.panel_raised)
-                    .border(border(8.0, 1.0, palette.border))
+                    .background(p.raised)
+                    .border(border(radius::SM, 0.0, p.raised))
             });
 
         row![
@@ -167,47 +158,53 @@ impl Taskscape {
             ),
             t_button(
                 self.theme_mode,
-                Some(Icon::RotateCcw),
+                Some(Icon::Reset),
                 "Reset",
                 ButtonKind::Ghost,
                 Some(Message::ResetHotkey),
             ),
         ]
-        .spacing(8)
+        .spacing(space::MD)
         .align_y(Alignment::Center)
         .into()
     }
 
     fn hotkey_enabled_setting(&self) -> AppElement<'_> {
-        let control = toggler(self.hotkey_enabled)
-            .size(22)
-            .on_toggle(Message::SetHotkeyEnabled);
+        let control = t_toggle(
+            self.theme_mode,
+            self.hotkey_enabled,
+            Message::SetHotkeyEnabled(!self.hotkey_enabled),
+        );
         self.setting_row(
             "Enable shortcut",
             "Turn the global mini-window shortcut on or off.",
-            control.into(),
+            control,
         )
     }
 
     fn reopen_setting(&self) -> AppElement<'_> {
-        let control = toggler(self.reopen_last_list)
-            .size(22)
-            .on_toggle(Message::SetReopenLastList);
+        let control = t_toggle(
+            self.theme_mode,
+            self.reopen_last_list,
+            Message::SetReopenLastList(!self.reopen_last_list),
+        );
         self.setting_row(
             "Reopen last list",
             "Open the list you were last using when Taskscape starts.",
-            control.into(),
+            control,
         )
     }
 
     fn confirm_clear_setting(&self) -> AppElement<'_> {
-        let control = toggler(self.confirm_clear_all)
-            .size(22)
-            .on_toggle(Message::SetConfirmClearAll);
+        let control = t_toggle(
+            self.theme_mode,
+            self.confirm_clear_all,
+            Message::SetConfirmClearAll(!self.confirm_clear_all),
+        );
         self.setting_row(
             "Confirm “Clear all”",
             "Ask before removing every task in a list.",
-            control.into(),
+            control,
         )
     }
 }

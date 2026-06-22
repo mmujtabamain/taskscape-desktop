@@ -2,14 +2,15 @@
 
 mod hotkey;
 mod launch;
-mod mini;
 mod sync;
 mod tray;
+mod ui;
 mod update;
 
 use common::models::Attachment;
 use common::tasklist::TaskList;
-use common::thememanager::{ThemeMode, app_theme};
+use common::ui::motion;
+use common::ui::theme::{ThemeMode, app_theme};
 use common::utils::fonts;
 use iced::{Settings, Size, Subscription, Theme, daemon, keyboard, window};
 use std::path::PathBuf;
@@ -201,11 +202,11 @@ impl TrayApp {
     }
 
     fn boot() -> (Self, AppTask) {
-        let load_fonts = iced::Task::batch([
-            iced::font::load(fonts::INTER_REGULAR_BYTES).map(|_| Message::FontLoaded),
-            iced::font::load(fonts::POPPINS_SEMIBOLD_BYTES).map(|_| Message::FontLoaded),
-            iced::font::load(lucide_icons::LUCIDE_FONT_BYTES).map(|_| Message::FontLoaded),
-        ]);
+        let load_fonts = iced::Task::batch(
+            fonts::REGISTERED_FONT_BYTES
+                .iter()
+                .map(|bytes| iced::font::load(*bytes).map(|_| Message::FontLoaded)),
+        );
         // No visible window at startup: open the hidden bootstrap window so the
         // tray/hotkey installers can run on the UI thread (see update.rs).
         let (_id, open) = window::open(Self::bootstrap_window_settings());
@@ -219,6 +220,7 @@ impl TrayApp {
         if let Some(theme) = config.theme {
             state.theme_mode = theme;
         }
+        motion::set_reduce_motion(config.reduce_motion);
         if config.reopen_last_list
             && let Some(last) = config.last_open
             && let Ok(file) = common::storage::load(&last)
@@ -267,10 +269,14 @@ pub fn run() -> iced::Result {
         .title(TrayApp::title)
         .theme(TrayApp::theme)
         .subscription(TrayApp::subscription)
-        .font(fonts::INTER_REGULAR_BYTES)
-        .font(fonts::POPPINS_SEMIBOLD_BYTES)
-        .font(lucide_icons::LUCIDE_FONT_BYTES)
-        .default_font(fonts::inter_regular())
+        .font(fonts::MONTSERRAT_REGULAR_BYTES)
+        .font(fonts::MONTSERRAT_MEDIUM_BYTES)
+        .font(fonts::MONTSERRAT_SEMIBOLD_BYTES)
+        .font(fonts::RALEWAY_MEDIUM_BYTES)
+        .font(fonts::RALEWAY_SEMIBOLD_BYTES)
+        .font(fonts::RALEWAY_BOLD_BYTES)
+        .font(fonts::ICON_FONT_BYTES)
+        .default_font(fonts::montserrat_regular())
         .settings(Settings::default())
         .antialiasing(true)
         .run()

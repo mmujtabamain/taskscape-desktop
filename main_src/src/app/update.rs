@@ -107,6 +107,11 @@ impl Taskscape {
                 self.confirm_clear_all = on;
                 self.persist_settings();
             }
+            Message::SetReduceMotion(on) => {
+                self.reduce_motion = on;
+                common::ui::motion::set_reduce_motion(on);
+                self.persist_settings();
+            }
             Message::SetHotkeyEnabled(on) => {
                 self.hotkey_enabled = on;
                 self.persist_settings();
@@ -153,7 +158,7 @@ impl Taskscape {
                 self.renaming = Some((name.clone(), name));
                 // Open the rename modal with its input focused and the cursor at
                 // the end of the existing name.
-                use crate::app::view::RENAME_INPUT_ID;
+                use crate::app::ui::RENAME_INPUT_ID;
                 return iced::widget::operation::focus(RENAME_INPUT_ID)
                     .chain(iced::widget::operation::move_cursor_to_end(RENAME_INPUT_ID));
             }

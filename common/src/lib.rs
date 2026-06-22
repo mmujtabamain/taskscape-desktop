@@ -13,9 +13,8 @@ pub mod ipc;
 pub mod models;
 pub mod storage;
 pub mod tasklist;
-pub mod thememanager;
+pub mod ui;
 pub mod utils;
-pub mod widgets;
 
 pub use models::Task;
 pub use tasklist::TaskList;

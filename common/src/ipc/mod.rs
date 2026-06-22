@@ -13,7 +13,7 @@ pub mod server;
 
 use crate::hotkey::HotkeySpec;
 use crate::models::{Attachment, Task};
-use crate::thememanager::ThemeMode;
+use crate::ui::theme::ThemeMode;
 use serde::{Deserialize, Serialize};
 use std::io::{self, BufRead, Write};
 use std::path::PathBuf;

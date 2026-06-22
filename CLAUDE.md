@@ -14,7 +14,7 @@ menu-bar (tray) service with a mini popup window, and a shared library.
 
 | Path                   | Crate name         | Binary           | Role                                                        |
 | ---------------------- | ------------------ | ---------------- | ----------------------------------------------------------- |
-| [common/](common/)     | `taskscape-common` | — (lib `common`) | Shared models, IPC, theme, widgets, storage                 |
+| [common/](common/)     | `taskscape-common` | — (lib `common`) | Shared models, IPC, the `ui` design system, storage         |
 | [main_src/](main_src/) | `taskscape`        | `taskscape`      | Main task window; IPC **client**; source of truth           |
 | [tray_src/](tray_src/) | `taskscape-tray`   | `taskscape-tray` | Menu-bar icon + global hotkey + mini window; IPC **server** |
 
@@ -61,9 +61,14 @@ cargo check                              # fast type-check
 - Rust **edition 2024**.
 - **Minimal comments** — names and structure carry meaning; comment only
   non-obvious intent/constraints. Match the existing `//!` module-doc style.
-- Shared UI is built from the `common::widgets` toolkit (`t_*` helpers) and
-  styled exclusively through `common::thememanager` factories — don't hardcode
-  colors in the binaries.
+- Shared UI is the **`common::ui`** design system: the `t_*` / `Interactive`
+  toolkit in `ui/components`, styled through `ui::theme` + `ui::tokens` (gray +
+  bronze palette, Raleway display / Montserrat body, Material Symbols Sharp icons).
+  Don't hardcode colors or sizes in the binaries — add/reuse a token or factory.
+  Per-component hover/press motion lives in the custom animated
+  `ui::components::interactive` widget (needs iced's `advanced` feature). Each
+  binary's screens live under its own `app/ui/`. **Fill over outline**: a filled
+  surface never also carries a border.
 - macOS-only native code (objc2 AppKit/QuartzCore) lives in the tray crate and
   is `#[cfg(target_os = "macos")]`-gated with non-macOS stubs.
 
@@ -74,10 +79,16 @@ captured in [DESIGN.md](DESIGN.md). Read them before any UI work.
 
 - **Register:** `product` — design serves the workflow (fast capture, calm list).
 - **Users:** macOS power users; keyboard-first, menu-bar-resident, native feel.
+- **Identity:** "Concrete & Bronze" — calm **gray** field, one warm **bronze**
+  accent (the action). Sharpened but **rounded** (no sharp corners, no pills);
+  fill-over-outline. The mini window is **frosted glass** (Spotlight-like, via
+  `NSVisualEffectView`); the main window is solid matte. UI in `common/src/ui/`
+  + each binary's `app/ui/`.
 - **Principles:** (1) capture beats organize, (2) calm by subtraction, (3) warmth
-  without noise, (4) native craft, (5) legible in both themes (WCAG AA).
-- **Avoid:** corporate SaaS-dashboard density, sterile gray minimalism, clutter,
-  gamification.
+  without noise (one bronze signal), (4) native craft, (5) legible in both themes
+  (WCAG AA). Honor **Reduce motion** (Settings + `config.json`).
+- **Avoid:** corporate SaaS-dashboard density, *sterile* gray, sharp corners/pills,
+  borders on filled surfaces, stacked/nested cards, clutter, gamification.
 
 ## Known gotchas
 

@@ -37,18 +37,22 @@ Three capabilities define it against a generic to-do app:
 ## Brand Personality
 
 **Calm · quick · crafted.** The voice is quiet and confident — it never shouts,
-never gamifies, never nags. Warmth is real but supporting: it comes from the
-terracotta/amber palette and the Poppins + Inter typography, not from decoration
-or personality-as-noise. The app should feel like a well-made native Mac tool
-that respects attention — fast and effortless to capture into, deliberate and
-precise in every detail, and restful to return to.
+never gamifies, never nags. The identity is a calm gray field with a single warm
+**bronze** signal (the one accent that means "the action"); warmth is supporting,
+carried by that accent and precise typography (Raleway + Montserrat), never by
+decoration or personality-as-noise. The app should feel like a well-made native
+Mac instrument — fast and effortless to capture into, sharpened and precise in
+every detail (rounded surfaces, fill-over-outline, restrained chrome), and restful
+to return to.
 
 ## Anti-references
 
 - **Corporate SaaS dashboards** (Asana / Jira / Monday): dense, busy,
   enterprise-blue, productivity-as-labor. Taskscape is the antithesis.
-- **Sterile gray minimalism** — cold flat gray/white generic Notion-clone looks
-  with no warmth or character. Restraint here must still feel warm and alive.
+- **Sterile gray minimalism** — cold, flat, characterless gray. The system *uses*
+  gray as a calm canvas, but it must never read as lifeless: the single bronze
+  signal, precise type, and crafted detail keep it warm and alive. Gray is the
+  quiet ground, not the whole story.
 - **Heavy / cluttered interfaces** — many controls, panels, and chrome competing
   for attention. If a control isn't earning its place, it doesn't ship.
 - **Playful / gamified to-do apps** — confetti, mascots, streaks, bright primary
@@ -61,9 +65,9 @@ precise in every detail, and restful to return to.
    (hotkey → type → Enter) above everything else.
 2. **Calm by subtraction.** Every control earns its place or is removed. The
    list — not the chrome — is the subject. Reduce before you add.
-3. **Warmth without noise.** Warmth lives in palette and type, never in
-   decoration. The app may feel inviting; it must never feel busy, cute, or
-   loud.
+3. **Warmth without noise.** Warmth lives in the single bronze accent and precise
+   type, never in decoration. The app may feel inviting; it must never feel busy,
+   cute, or loud. One signal in a calm field — the rarity is the point.
 4. **Native craft.** Behave like a first-class Mac citizen. Corners, spacing,
    motion, focus behavior, and light/dark parity are deliberate, not incidental.
 5. **Legible for everyone, both themes.** Readability is non-negotiable in light
@@ -75,7 +79,8 @@ precise in every detail, and restful to return to.
 Target **WCAG 2.1 AA**, held deliberately rather than incidentally:
 
 - Body text ≥ 4.5:1 contrast against its background; large/bold text ≥ 3:1 — in
-  **both** the dark (browns/oranges) and light (tans/terracottas) themes.
+  **both** the dark and light gray themes (and bronze-on-surface, plus text on the
+  frosted glass).
 - Honor the system reduced-motion preference; every animation needs a non-motion
   alternative (crossfade or instant).
 - Keyboard-first throughout: the core capture and navigation flows must be fully

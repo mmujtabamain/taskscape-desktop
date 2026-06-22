@@ -216,6 +216,7 @@ impl Taskscape {
         config.confirm_clear_all = self.confirm_clear_all;
         config.hotkey_enabled = self.hotkey_enabled;
         config.hotkey = Some(self.hotkey.clone());
+        config.reduce_motion = self.reduce_motion;
         storage::save_config(&config);
     }
 

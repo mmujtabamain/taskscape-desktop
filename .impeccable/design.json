@@ -2,82 +2,87 @@
   "schemaVersion": 2,
   "generatedAt": "2026-06-22T00:00:00Z",
   "title": "Design System: Taskscape",
-  "note": "Taskscape is a native macOS app (Rust + Iced), not a web project. The live preview panel renders HTML/CSS in a browser and does not apply here, so component HTML/CSS snippets are intentionally omitted. This sidecar carries the framework-agnostic extension data (color metadata, tonal ramps, shadow vocabulary, narrative) that augments DESIGN.md. Values reflect the canonical DARK theme; light-theme counterparts are documented in DESIGN.md §2.",
+  "note": "Taskscape is a native macOS app (Rust + Iced), not a web project. The live preview panel renders HTML/CSS in a browser and does not apply here, so component HTML/CSS snippets are intentionally omitted. This sidecar carries the framework-agnostic extension data (color metadata, tonal ramps, shadow vocabulary, narrative) that augments DESIGN.md. Values reflect the canonical DARK theme; light-theme counterparts are in DESIGN.md §2. Identity: 'Concrete & Bronze' — calm gray field, one warm bronze signal; frosted-glass mini HUD vs. solid main window.",
   "extensions": {
     "colorMeta": {
-      "accent": { "role": "primary", "displayName": "Ember Coral", "canonical": "#FF7C5D", "tonalRamp": ["#6B3528","#974A38","#C45F48","#EB7256","#FE886A","#FCA186","#FABFA8","#F7DECB"] },
-      "accent-text": { "role": "primary", "displayName": "Accent Ink", "canonical": "#21110E" },
-      "bg-bottom": { "role": "neutral", "displayName": "Toasted Brown (body)", "canonical": "#2B1C16", "tonalRamp": ["#160E0B","#1C120E","#231612","#281A15","#3F312A","#6C6056","#A1968A","#D8CFC0"] },
-      "panel-alt": { "role": "neutral", "displayName": "Warm Cocoa (mid surface)", "canonical": "#3C2D26", "tonalRamp": ["#1D1512","#261C18","#30231E","#382A23","#4F4038","#786B61","#A89E91","#DAD2C2"] },
-      "panel-raised": { "role": "neutral", "displayName": "Espresso (top surface)", "canonical": "#2B211B", "tonalRamp": ["#16100D","#1C1511","#231A15","#281F19","#3F362F","#6C6359","#A1988C","#D8D0C1"] },
-      "text-primary": { "role": "neutral", "displayName": "Warm Cream", "canonical": "#F5E7D4", "tonalRamp": ["#675F57","#91887D","#BCB1A2","#E2D5C3","#F5E8D5","#F5EAD7","#F6ECDA","#F6EEDD"] },
-      "text-secondary": { "role": "neutral", "displayName": "Sand", "canonical": "#C9B199" },
-      "text-muted": { "role": "neutral", "displayName": "Faded Taupe", "canonical": "#9B7F6C" },
-      "success": { "role": "tertiary", "displayName": "Success Sage", "canonical": "#81B27D" },
-      "danger": { "role": "tertiary", "displayName": "Danger Clay", "canonical": "#E27F67" },
-      "warning": { "role": "tertiary", "displayName": "Warning Amber", "canonical": "#E4B262" }
+      "accent": { "role": "primary", "displayName": "Caramel Bronze", "canonical": "#B5825A", "tonalRamp": ["#4E3B2C","#6D503A","#8C6548","#A77854","#BA8C68","#C5A388","#D2BDAE","#E0D9D4"] },
+      "on-accent": { "role": "primary", "displayName": "On-Accent Ink", "canonical": "#1A1410" },
+      "bg": { "role": "neutral", "displayName": "Graphite (base)", "canonical": "#161719", "tonalRamp": ["#0F1012","#111214","#131416","#151618","#2B2C2E","#595A5C","#8F9092","#C8C9CB"] },
+      "surface": { "role": "neutral", "displayName": "Slate (mid surface)", "canonical": "#1D1F22", "tonalRamp": ["#121315","#151719","#181A1D","#1B1D20","#313336","#5E5F62","#929496","#C9CACC"] },
+      "raised": { "role": "neutral", "displayName": "Pewter (top surface)", "canonical": "#26282C", "tonalRamp": ["#151719","#1A1C1F","#1F2125","#24262A","#393B3F","#646569","#96979A","#CACBCE"] },
+      "text": { "role": "neutral", "displayName": "Cool Off-White", "canonical": "#E7E8EA", "tonalRamp": ["#626365","#8A8B8D","#B2B3B5","#D5D6D8","#E7E8EA","#E7E8EA","#E7E8EA","#E7E8EA"] },
+      "text-dim": { "role": "neutral", "displayName": "Cool Gray", "canonical": "#A2A7AE" },
+      "text-muted": { "role": "neutral", "displayName": "Muted Gray", "canonical": "#8A9098" },
+      "success": { "role": "tertiary", "displayName": "Sage", "canonical": "#72B07D" },
+      "danger": { "role": "tertiary", "displayName": "Clay", "canonical": "#D67D67" },
+      "warning": { "role": "tertiary", "displayName": "Amber", "canonical": "#D9A445" }
     },
     "typographyMeta": {
-      "display": { "displayName": "Display", "purpose": "The editable list title only — the one large, confident moment (Poppins SemiBold 40px)." },
-      "headline": { "displayName": "Headline", "purpose": "Primary screen/section headings and empty-state titles (Poppins SemiBold 26px)." },
-      "title": { "displayName": "Title", "purpose": "Modal titles and sub-section headers (Poppins SemiBold 17–22px)." },
-      "body": { "displayName": "Body", "purpose": "Task text, button labels, input values (Inter Regular 14–16px)." },
-      "label": { "displayName": "Label", "purpose": "Captions, chips, metric counts, quiet metadata (Inter Regular 11–13px)." }
+      "display": { "displayName": "Display", "purpose": "Editable list title (Raleway Bold 32px) — the one large moment." },
+      "heading": { "displayName": "Heading", "purpose": "Screen/section headings, empty-state titles (Raleway SemiBold 22px)." },
+      "title": { "displayName": "Title", "purpose": "Modal titles, sub-headers (Raleway SemiBold 17px)." },
+      "body": { "displayName": "Body", "purpose": "Task text, button labels, input values (Montserrat Regular 14px)." },
+      "label": { "displayName": "Label", "purpose": "Captions, chips, metric counts (Montserrat Medium 12px)." }
     },
     "shadows": [
-      { "name": "action-lift", "value": "0 0 14px rgba(8,5,4,0.35)", "purpose": "The primary (coral) button only — a soft halo that says 'press me'; removed on :active." },
-      { "name": "modal-lift", "value": "0 8px 28px rgba(8,5,4,0.35)", "purpose": "The centered modal card floating above its dimmed backdrop." },
-      { "name": "sidebar-edge", "value": "3px 0 12px rgba(8,5,4,0.35)", "purpose": "Cast rightward onto the content area so the sidebar reads as a raised plane, not a seam." }
+      { "name": "modal-lift", "value": "0 12px 32px rgba(0,0,0,0.55)", "purpose": "The modal card floating above its dimmed scrim." },
+      { "name": "sidebar-edge", "value": "3px 0 14px rgba(0,0,0,0.55)", "purpose": "Cast rightward so the sidebar reads as a raised plane." }
+    ],
+    "motion": [
+      { "name": "ease-out-quint", "value": "cubic-bezier(0.22, 1, 0.36, 1)", "purpose": "The one easing for hover/press/reveal (lilt EaseOutQuint)." },
+      { "name": "quick", "value": "120ms", "purpose": "Hover and most state changes." },
+      { "name": "press", "value": "90ms", "purpose": "Press feedback." },
+      { "name": "base", "value": "180ms", "purpose": "Reveals / open-close." },
+      { "name": "slow", "value": "250ms", "purpose": "Larger moments (e.g. theme cross-fade)." }
     ]
   },
   "components": [
-    { "name": "Primary Button", "kind": "button", "refersTo": "button-primary", "description": "Coral fill with Accent-Ink text and the action-lift shadow; the single primary action per view. Hover lightens ~8% toward white; press drops the shadow." },
-    { "name": "Ghost Button", "kind": "button", "refersTo": "button-ghost", "description": "Translucent raised panel (35%) with a 1px resting border; the quiet secondary action. Hover warms the border to border-strong." },
-    { "name": "Icon Button", "kind": "button", "refersTo": "button-icon", "description": "Solid panel-raised fill, 1px border, 12px radius; optional count beside the glyph." },
-    { "name": "Plain Icon Button", "kind": "button", "refersTo": "button-plain", "description": "Transparent, borderless, faint hover tint only; for actions nested inside an already-styled row (e.g. per-task paperclip)." },
-    { "name": "Input Field", "kind": "input", "refersTo": "input", "description": "panel-raised background, 12px radius, 1px border; focus shifts the border to full Ember Coral, selection at 28% accent." },
-    { "name": "Dropdown (pick list)", "kind": "nav", "refersTo": "input", "description": "Matches the input; hover/open warm the border to border-strong, handle glyph in text-secondary." },
-    { "name": "Accent Chip", "kind": "chip", "refersTo": "chip-accent", "description": "panel-alt fill, 16px radius, Accent-Ink label; for attachment chips and small badges." },
-    { "name": "Neutral Chip", "kind": "chip", "refersTo": "chip-neutral", "description": "panel-raised fill, 14px radius, Text-Secondary label." },
-    { "name": "Modal Card", "kind": "card", "refersTo": "card-modal", "description": "panel-alt surface, 16px radius, border-strong edge, modal-lift shadow above a dimmed backdrop." },
-    { "name": "Mini Window", "kind": "custom", "refersTo": "card-panel", "description": "Signature hotkey-summoned capture popup: transparent window clipped to 10px radius with a 1.5px Ember-Coral hairline border at 45% alpha; no drop shadow (native CALayer clip)." },
-    { "name": "Editable Title", "kind": "custom", "refersTo": "card-panel", "description": "Signature 40px Poppins SemiBold list title that flips in place between display text and a borderless inline field; the capture-first way to rename a list." }
+    { "name": "Primary Button", "kind": "button", "refersTo": "button-primary", "description": "Bronze fill, On-Accent ink, 10px radius; hover brightens + 1px lift, press settles. Built on the animated interactive widget." },
+    { "name": "Ghost Button", "kind": "button", "refersTo": "button-ghost", "description": "Faint text-tinted fill (~5%) strengthening on hover; no border. Secondary action." },
+    { "name": "Plain Icon Button", "kind": "button", "refersTo": "button-plain", "description": "Transparent until a faint hover tint; for actions nested in a row." },
+    { "name": "Input Field", "kind": "input", "refersTo": "input", "description": "Filled (raised), no rest border; focus brings a bronze ring; placeholder muted." },
+    { "name": "Checkbox", "kind": "custom", "refersTo": "button-primary", "description": "Outlined box (hairline ring) → bronze fill with a sharp check when set; hover/press animated." },
+    { "name": "Toggle", "kind": "custom", "refersTo": "button-primary", "description": "Rounded-rect track (not a pill); knob left/right; bronze fill when on." },
+    { "name": "Accent Chip", "kind": "chip", "refersTo": "chip-accent", "description": "Bronze fill, ink text, 8px radius, no border." },
+    { "name": "Neutral Chip", "kind": "chip", "refersTo": "chip-neutral", "description": "Raised fill, dim text. Attachment chips add thumbnail/icon + remove and animate on hover." },
+    { "name": "Task Row", "kind": "custom", "refersTo": "button-plain", "description": "Flat row: transparent at rest, faint fill on hover (not a stacked card)." },
+    { "name": "Modal Card", "kind": "card", "refersTo": "card-modal", "description": "One of the few real cards: surface fill, 16px radius, no border, soft shadow above the scrim." },
+    { "name": "Mini Window", "kind": "custom", "refersTo": "glass-shell", "description": "Frosted-glass HUD: native NSVisualEffectView (BehindWindow) behind a transparent Iced surface; glass tint + 1px edge on top, 16px CALayer clip, no shadow." },
+    { "name": "Editable Title", "kind": "custom", "refersTo": "card-modal", "description": "32px Raleway Bold title flipping in place between display text and a borderless field; bronze underline while editing." }
   ],
   "narrative": {
-    "northStar": "The Considered Desk",
-    "overview": "Taskscape is an uncluttered, deliberately arranged personal desk. Nothing extra sits on it; everything that is there is there on purpose and within easy reach. The surface is warm — terracotta, amber, toasted browns — so it feels lived-in and calm rather than clinical, but the warmth never tips into decoration. A single coral accent is the one tool you reach for most, and its rarity is what makes it read as 'the action.' Depth comes from tonal layering (bg → panel-alt → panel-raised), not from heavy shadows; shadows are rationed for surfaces that genuinely lift. The system rejects the corporate SaaS dashboard, sterile gray minimalism, visual clutter, and gamification. Calm confidence is the register; the design earns its keep by getting out of the way.",
+    "northStar": "Concrete & Bronze",
+    "overview": "Taskscape is a calm gray field with a single warm bronze signal. The surface is a quiet machined neutral (graphite in dark, concrete in light) and the lone caramel-bronze accent is the action — primary button, selection, focus ring, the linked dot — its rarity the point. Two materials: the mini window is a frosted-glass HUD (Spotlight-like), the main window the solid matte workbench. The system is sharpened, not sharp: every corner rounded (8-16px), no pills, no hard edges; sharpness comes from crisp Raleway/Montserrat type, sharp-cornered icons, fill-over-outline, and restraint. Depth is the tonal ladder, not heavy shadow. It rejects the corporate SaaS dashboard, sterile gray, clutter, and gamification.",
     "keyCharacteristics": [
-      "Warm, tonal, low-contrast surfaces; warmth carried by palette and type, never decoration.",
-      "One coral accent, used sparingly, as the single 'this is the action' signal.",
-      "Tonal layering over shadows; depth is rationed and meaningful.",
-      "Soft, friendly radii (10–16px); the square sidebar is the deliberate exception.",
-      "Full dark/light parity — both themes first-class, both legible (WCAG AA)."
+      "Calm gray surfaces, one warm bronze signal used sparingly as 'the action'.",
+      "Two materials: a frosted-glass mini HUD vs. a solid matte main window.",
+      "Sharpened, soft-cornered: rounded everywhere (no sharp corners, no pills).",
+      "Fill over outline; separation by tone, not borders.",
+      "Animated micro-interactions on every control (hover/press), reduce-motion aware."
     ],
     "rules": [
-      { "name": "The One Ember Rule", "body": "Ember Coral appears on a single primary affordance per view. If two things on screen are coral, one of them is wrong.", "section": "colors" },
-      { "name": "The Dual-Theme Parity Rule", "body": "Every color exists in both themes and both must ship at full quality. A change to a token is a change to both of its values.", "section": "colors" },
-      { "name": "The Warm-Shadow Rule", "body": "Shadows and borders are tinted toward the surface's own warm hue, never neutral gray or pure black.", "section": "colors" },
-      { "name": "The Two-Voice Rule", "body": "Poppins speaks for structure (titles, headings); Inter speaks for content and controls.", "section": "typography" },
-      { "name": "The Quiet-Type Rule", "body": "Size and weight carry hierarchy; tracking and case do not. No all-caps tracked eyebrows.", "section": "typography" },
-      { "name": "The Earned-Shadow Rule", "body": "A surface gets a shadow only if it physically lifts: the primary action, a modal, the sidebar edge. Everything else separates by tone.", "section": "elevation" }
+      { "name": "The One Bronze Rule", "body": "Bronze appears on a single primary affordance per view; everything else is the gray ladder + type weight.", "section": "colors" },
+      { "name": "The Fill-Over-Outline Rule", "body": "A component with a background gets no border; separation is the fill and its tonal step. Hairlines only where there is no fill.", "section": "colors" },
+      { "name": "The Dual-Theme Parity Rule", "body": "Every color exists in both themes at full quality; a change to a token changes both values.", "section": "colors" },
+      { "name": "The Two-Voice Rule", "body": "Raleway speaks for structure; Montserrat for content and controls. Never swap them.", "section": "typography" },
+      { "name": "The Sharp-Marks Rule", "body": "Sharpness lives in the marks (crisp type, sharp-cornered icons), not in the always-rounded surfaces.", "section": "typography" },
+      { "name": "The Earned-Shadow Rule", "body": "A shadow only where a surface genuinely floats (modal, sidebar edge, glass HUD); everything else separates by tone.", "section": "elevation" }
     ],
     "dos": [
-      "Do reserve Ember Coral for one primary action per view; build other hierarchy from the neutral ladder and type weight.",
-      "Do convey depth with tonal layering before reaching for a shadow.",
-      "Do keep both themes at full quality and verify contrast in each (4.5:1 body, 3:1 large).",
-      "Do route every style through common::thememanager factories and build UI from the t_* toolkit.",
-      "Do tint borders and shadows toward the surface's warm hue.",
-      "Do keep capture frictionless: hotkey → type → Enter and the mini window stay ceremony-free.",
-      "Do honor the system reduced-motion preference with a crossfade or instant fallback."
+      "Do reserve bronze for one primary action per view; build the rest from the gray ladder and type weight.",
+      "Do separate filled surfaces by tone, never by a border; hairline only where there is no fill.",
+      "Do round every corner (8-16px); let sharpness come from crisp type, sharp icons, and restraint.",
+      "Do keep both themes AA-legible (4.5:1 body, 3:1 large), including bronze-on-surface and text on glass.",
+      "Do route every style through common::ui and build controls on the interactive widget (animated, reduce-motion aware).",
+      "Do keep capture frictionless: hotkey -> type -> Enter and the mini window stay ceremony-free."
     ],
     "donts": [
       "Don't build toward a corporate SaaS dashboard — no dense data-grid chrome, no enterprise blue.",
-      "Don't drift into sterile gray minimalism — no cold flat gray/white surfaces, no neutral-black shadows.",
-      "Don't clutter the surface — every control earns its place or is removed.",
-      "Don't gamify — no confetti, streaks, mascots, badges, or bright primary colors.",
-      "Don't let text-muted sit on a low-contrast surface for anything that must be read, placeholders included.",
-      "Don't add a second coral element, a decorative gradient wash, or a shadow 'to make it pop.'",
-      "Don't use all-caps tracked eyebrows or letter-spacing tricks for hierarchy."
+      "Don't ship sterile gray — the bronze signal and crafted detail must keep the gray alive, never cold/flat.",
+      "Don't use sharp/hard corners or pills — everything is softly rounded.",
+      "Don't put a border on a filled component, or stack/nest cards (task rows are flat).",
+      "Don't gamify or clutter — no confetti/streaks/mascots, no competing controls.",
+      "Don't add a second bronze element, a decorative gradient, or a shadow 'to make it pop'."
     ]
   }
 }

@@ -28,11 +28,17 @@ then the service runs windowless until the mini window is opened.
 | [src/app/hotkey.rs](../tray_src/src/app/hotkey.rs) | Global hotkey (default Option/Alt+`): `HotkeyCommand::ToggleMini`, `install`, `apply(spec, enabled)`(re-register live),`to_hotkey`, `configured`, `subscription`→ see [ipc.md](ipc.md) for live rebind via`SetHotkey`                                                |
 | [src/app/sync.rs](../tray_src/src/app/sync.rs)     | IPC server glue: `broadcast`, `persist_local` (write the list to disk when the main app is offline), `handle_ipc`, `apply_remote` (`Hello`/`AddTask`/`RemoveTask`/`ToggleTaskCompleted`/`SetHotkey`), `applying_remote` echo guard → see [ipc.md](ipc.md)                                                                                   |
 
-## View
+## UI — `src/app/ui/`
 
-| File                                           | Purpose                                                                                                                                                  |
-| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [src/app/mini.rs](../tray_src/src/app/mini.rs) | Mini window UI: `mini_view` (drag-handle header + composer + scrollable task list + footer), `mini_task_row`, and `quit_confirm_view` (draggable borderless popover) |
+| File                                           | Purpose                                                                                                                       |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| [src/app/ui/mod.rs](../tray_src/src/app/ui/mod.rs)             | Module aggregator; re-exports `MINI_INPUT_ID`, `MINI_RADIUS`                                            |
+| [src/app/ui/mini.rs](../tray_src/src/app/ui/mini.rs)           | Frosted-glass mini window: `mini_view` (drag-handle header + composer + scrollable task list + footer), `mini_task_row` |
+| [src/app/ui/quit_confirm.rs](../tray_src/src/app/ui/quit_confirm.rs) | `quit_confirm_view` (draggable borderless popover, its own window)                               |
+
+The mini window's Spotlight-style blur is native: `tray::frost_window` inserts an
+`NSVisualEffectView` behind the transparent Iced content; `common::ui::glass_shell`
+lays the tint + edge on top.
 
 ## Other
 

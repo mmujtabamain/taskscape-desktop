@@ -26,13 +26,13 @@ relative to the repo root. Deeper file detail: [common.md](common.md),
 
 | Goal                                                          | Edit                                                                                                                |
 | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| Overall layout (sidebar + content + status bar + modals)      | [main_src/src/app/view/mod.rs](../main_src/src/app/view/mod.rs)                                                     |
-| Top header of an open list (title, controls)                  | [main_src/src/app/view/header.rs](../main_src/src/app/view/header.rs)                                               |
-| Sidebar list rail/panel, rename/clear-all modals, empty state | [main_src/src/app/view/lists.rs](../main_src/src/app/view/lists.rs)                                                 |
-| Task composer + actions row (incl. attach/screenshot buttons) | [main_src/src/app/view/tasks.rs](../main_src/src/app/view/tasks.rs)                                                 |
-| Task cards / scroll list (incl. per-task attach buttons+chips) | [main_src/src/app/view/workspace.rs](../main_src/src/app/view/workspace.rs)                                        |
-| Attach-file/screenshot logic (both apps)                      | `app/update.rs` + main's [actions.rs](../main_src/src/app/actions.rs) (`attach_to_target`, `launch_file_attach_dialog`); chip widget [t_attachment.rs](../common/src/widgets/t_attachment.rs) |
-| Settings page                                                 | [main_src/src/app/view/settings.rs](../main_src/src/app/view/settings.rs)                                           |
+| Overall layout (sidebar + content + status bar + modals)      | [main_src/src/app/ui/mod.rs](../main_src/src/app/ui/mod.rs)                                                     |
+| Top header of an open list (title, controls)                  | [main_src/src/app/ui/header.rs](../main_src/src/app/ui/header.rs)                                               |
+| Sidebar list rail/panel, rename/clear-all modals, empty state | [main_src/src/app/ui/lists.rs](../main_src/src/app/ui/lists.rs)                                                 |
+| Task composer + actions row (incl. attach/screenshot buttons) | [main_src/src/app/ui/tasks.rs](../main_src/src/app/ui/tasks.rs)                                                 |
+| Task cards / scroll list (incl. per-task attach buttons+chips) | [main_src/src/app/ui/workspace.rs](../main_src/src/app/ui/workspace.rs)                                        |
+| Attach-file/screenshot logic (both apps)                      | `app/update.rs` + main's [actions.rs](../main_src/src/app/actions.rs) (`attach_to_target`, `launch_file_attach_dialog`); chip widget [chip.rs](../common/src/ui/components/chip.rs) |
+| Settings page                                                 | [main_src/src/app/ui/settings.rs](../main_src/src/app/ui/settings.rs)                                           |
 | Add a new `Message` / route an event                          | [main_src/src/app/mod.rs](../main_src/src/app/mod.rs) (enum) + [update.rs](../main_src/src/app/update.rs) (handler) |
 | Keyboard shortcuts (Cmd+Z/E/O/N/L/T, Esc)                     | [main_src/src/app/update.rs](../main_src/src/app/update.rs)                                                         |
 | Native menu bar items                                         | [main_src/src/app/native_menu.rs](../main_src/src/app/native_menu.rs)                                               |
@@ -41,13 +41,13 @@ relative to the repo root. Deeper file detail: [common.md](common.md),
 
 | Goal                                                       | Edit                                                                                                                     |
 | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Mini window layout/content                                 | [tray_src/src/app/mini.rs](../tray_src/src/app/mini.rs)                                                                  |
+| Mini window layout/content                                 | [tray_src/src/app/ui/mini.rs](../tray_src/src/app/ui/mini.rs)                                                                  |
 | Mini window position/size/open-close behavior              | [tray_src/src/app/update.rs](../tray_src/src/app/update.rs) (`toggle_mini_window`, `mini_window_position`, `mouse_window_position`)               |
 | Mini window drag / focus-on-open / close-on-blur           | [tray_src/src/app/update.rs](../tray_src/src/app/update.rs) (`DragMini`, `mini_focused`) + [tray_src/src/app/tray.rs](../tray_src/src/app/tray.rs) (`focus_window`, `mouse_position_top_left`) |
 | Menu-bar icon, its menu, the drawn glyph                   | [tray_src/src/app/tray.rs](../tray_src/src/app/tray.rs)                                                                  |
 | Mini window rounded corners / no shadow / Retina anchoring | [tray_src/src/app/tray.rs](../tray_src/src/app/tray.rs) (`round_window`, `main_screen_scale`)                            |
 | Global hotkey default / registration / rebind              | [tray_src/src/app/hotkey.rs](../tray_src/src/app/hotkey.rs) + [common/src/hotkey.rs](../common/src/hotkey.rs) (the spec) |
-| Quit confirmation popover                                  | [tray_src/src/app/mini.rs](../tray_src/src/app/mini.rs) (`quit_confirm_view`) + update.rs (`open_quit_confirm`, `quit`)  |
+| Quit confirmation popover                                  | [tray_src/src/app/ui/quit_confirm.rs](../tray_src/src/app/ui/quit_confirm.rs) (`quit_confirm_view`) + update.rs (`open_quit_confirm`, `quit`)  |
 
 ## Cross-process / IPC
 
@@ -61,10 +61,14 @@ relative to the repo root. Deeper file detail: [common.md](common.md),
 
 | Goal                                                         | Edit                                                                                                       |
 | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| Colors / palette / dark-vs-light                             | [common/src/thememanager/palette.rs](../common/src/thememanager/palette.rs) — see [theming.md](theming.md) |
-| A specific element's style (button/container/input/dropdown) | the matching `thememanager/*.rs` factory                                                                   |
-| A reusable widget's behavior/markup                          | the `common/src/widgets/t_*.rs` file — see [theming.md](theming.md)                                        |
-| Fonts                                                        | [common/src/utils/fonts.rs](../common/src/utils/fonts.rs) + [assets/fonts/](../assets/fonts/)              |
+| Colors / palette / dark-vs-light                             | [common/src/ui/theme.rs](../common/src/ui/theme.rs) (`palette`) — see [theming.md](theming.md)             |
+| Radii / spacing / type sizes (geometry tokens)               | [common/src/ui/tokens.rs](../common/src/ui/tokens.rs)                                                      |
+| Motion (durations, easing, reduce-motion)                    | [common/src/ui/motion.rs](../common/src/ui/motion.rs)                                                      |
+| Hover/press/focus animation (any control)                    | [common/src/ui/components/interactive.rs](../common/src/ui/components/interactive.rs) (the custom `Widget`)|
+| A specific element's style/markup (button/input/chip/…)      | the matching `common/src/ui/components/*.rs` — see [theming.md](theming.md)                                |
+| Frosted-glass mini window (native blur)                      | [tray_src/src/app/tray.rs](../tray_src/src/app/tray.rs) (`frost_window`) + `glass_shell` (containers.rs)   |
+| Reduce motion (setting + persistence)                        | [main_src/src/app/ui/settings.rs](../main_src/src/app/ui/settings.rs); `config.reduce_motion`; `motion::set_reduce_motion` |
+| Fonts / icons                                                | [common/src/utils/fonts.rs](../common/src/utils/fonts.rs) + [assets/fonts/](../assets/fonts/); add icons via `used-icons.txt` + `regen-subset.sh` |
 
 ## Startup, build, packaging
 

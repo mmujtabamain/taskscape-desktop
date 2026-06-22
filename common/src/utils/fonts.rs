@@ -1,12 +1,9 @@
 //! Embedded fonts + `Font` builders.
 //!
-//! The redesign uses **Raleway** for display/headings and **Montserrat** for
-//! body/UI, with a sharp-cornered **Material Symbols Sharp** icon subset. The
-//! fontsource static weights carry no typographic family, so each weight is its
-//! own family name — the builders below select by that exact name.
-//!
-//! Inter + Poppins remain only until the old `widgets`/`thememanager` modules are
-//! removed; the new `common::ui` layer does not use them.
+//! **Raleway** for display/headings and **Montserrat** for body/UI, with a
+//! sharp-cornered **Material Symbols Sharp** icon subset. The fontsource static
+//! weights carry no typographic family, so each weight is its own family name —
+//! the builders below select by that exact name.
 
 use iced::Font;
 use iced::font::{Family, Stretch, Style, Weight};
@@ -76,19 +73,4 @@ pub const fn raleway_bold() -> Font {
 /// The Material Symbols Sharp icon face.
 pub const fn icon_font() -> Font {
     face("Material Symbols Sharp", Weight::Normal)
-}
-
-// --- Retired (Inter + Poppins): kept until old widgets/thememanager are removed --
-
-pub const INTER_REGULAR_BYTES: &[u8] =
-    include_bytes!("../../../assets/fonts/Inter/static/Inter_24pt-Regular.ttf");
-pub const POPPINS_SEMIBOLD_BYTES: &[u8] =
-    include_bytes!("../../../assets/fonts/Poppins/Poppins-SemiBold.ttf");
-
-pub const fn poppins_semibold() -> Font {
-    face("Poppins", Weight::Semibold)
-}
-
-pub const fn inter_regular() -> Font {
-    face("Inter", Weight::Normal)
 }

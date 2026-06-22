@@ -6,14 +6,15 @@ mod native_menu;
 mod queries;
 mod snapshot;
 mod sync;
+mod ui;
 mod update;
-mod view;
 
 use common::hotkey::HotkeySpec;
 use common::models::Attachment;
 use common::storage::ListEntry;
 use common::tasklist::TaskList;
-use common::thememanager::{ThemeMode, app_theme};
+use common::ui::motion;
+use common::ui::theme::{ThemeMode, app_theme};
 use common::utils::fonts;
 use iced::{Settings, Subscription, Theme, Size, daemon, keyboard, window};
 use std::path::PathBuf;
@@ -85,6 +86,8 @@ pub enum Message {
     SetReopenLastList(bool),
     /// Toggle "confirm before Clear all".
     SetConfirmClearAll(bool),
+    /// Toggle reduced motion (collapse animations to instant).
+    SetReduceMotion(bool),
     /// Enable/disable the mini-window global hotkey.
     SetHotkeyEnabled(bool),
     /// Begin live-capturing a new mini-window hotkey (the next key combo wins).
@@ -165,6 +168,8 @@ pub struct Taskscape {
     pub(crate) reopen_last_list: bool,
     /// Ask before the destructive "Clear all" (persisted setting).
     pub(crate) confirm_clear_all: bool,
+    /// Collapse UI animations to instant (persisted setting).
+    pub(crate) reduce_motion: bool,
     /// Whether the mini-window global hotkey is enabled (persisted setting).
     pub(crate) hotkey_enabled: bool,
     /// The mini-window global hotkey (persisted setting; registered by the tray).
@@ -198,6 +203,7 @@ impl Default for Taskscape {
             confirming_clear_all: false,
             reopen_last_list: true,
             confirm_clear_all: true,
+            reduce_motion: false,
             hotkey_enabled: true,
             hotkey: HotkeySpec::default_mini_toggle(),
             ipc_connected: false,
@@ -219,11 +225,11 @@ impl Taskscape {
     }
 
     fn boot() -> (Self, AppTask) {
-        let load_fonts = iced::Task::batch([
-            iced::font::load(fonts::INTER_REGULAR_BYTES).map(|_| Message::FontLoaded),
-            iced::font::load(fonts::POPPINS_SEMIBOLD_BYTES).map(|_| Message::FontLoaded),
-            iced::font::load(lucide_icons::LUCIDE_FONT_BYTES).map(|_| Message::FontLoaded),
-        ]);
+        let load_fonts = iced::Task::batch(
+            fonts::REGISTERED_FONT_BYTES
+                .iter()
+                .map(|bytes| iced::font::load(*bytes).map(|_| Message::FontLoaded)),
+        );
 
         // Populate the sidebar and restore saved settings.
         let mut state = Self::default();
@@ -235,6 +241,8 @@ impl Taskscape {
         }
         state.reopen_last_list = config.reopen_last_list;
         state.confirm_clear_all = config.confirm_clear_all;
+        state.reduce_motion = config.reduce_motion;
+        motion::set_reduce_motion(state.reduce_motion);
         state.hotkey_enabled = config.hotkey_enabled;
         if let Some(hotkey) = config.hotkey {
             state.hotkey = hotkey;
@@ -290,10 +298,14 @@ pub fn run() -> iced::Result {
         .title(Taskscape::title)
         .theme(Taskscape::theme)
         .subscription(Taskscape::subscription)
-        .font(fonts::INTER_REGULAR_BYTES)
-        .font(fonts::POPPINS_SEMIBOLD_BYTES)
-        .font(lucide_icons::LUCIDE_FONT_BYTES)
-        .default_font(fonts::inter_regular())
+        .font(fonts::MONTSERRAT_REGULAR_BYTES)
+        .font(fonts::MONTSERRAT_MEDIUM_BYTES)
+        .font(fonts::MONTSERRAT_SEMIBOLD_BYTES)
+        .font(fonts::RALEWAY_MEDIUM_BYTES)
+        .font(fonts::RALEWAY_SEMIBOLD_BYTES)
+        .font(fonts::RALEWAY_BOLD_BYTES)
+        .font(fonts::ICON_FONT_BYTES)
+        .default_font(fonts::montserrat_regular())
         .settings(Settings::default())
         .antialiasing(true)
         .run()

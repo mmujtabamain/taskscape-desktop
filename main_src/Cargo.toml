@@ -10,7 +10,6 @@ path = "src/main.rs"
 [dependencies]
 common = { package = "taskscape-common", path = "../common" }
 iced = "0.14"
-lucide-icons = { version = "1.14.0", features = ["iced"] }
 serde = { version = "1.0", features = ["derive"] }
 muda = "0.19"
 rfd = "0.15"

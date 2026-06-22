@@ -27,16 +27,16 @@ modules by concern.
 | [src/app/snapshot.rs](../main_src/src/app/snapshot.rs) | `AppSnapshot` (task vector) for the undo/redo stacks                                                                                                                                                                                    |
 | [src/app/sync.rs](../main_src/src/app/sync.rs)         | IPC glue: `broadcast`, `resync_tray` (full `Hello`), `send_hotkey_config`, `handle_ipc`, `apply_remote` (with `applying_remote` echo guard) → see [ipc.md](ipc.md)                                                                      |
 
-## View — `src/app/view/`
+## View — `src/app/ui/`
 
 | File                                                       | Purpose                                                                                                                          |
 | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| [view/mod.rs](../main_src/src/app/view/mod.rs)             | Top-level composer: `view_root` (sidebar + content + status bar + modals), `workspace_or_prompt`, `status_bar`, `list_sidebar`   |
-| [view/header.rs](../main_src/src/app/view/header.rs)       | Open-list top bar: title, count, control buttons (panel/import/export/theme/undo/redo)                                           |
-| [view/lists.rs](../main_src/src/app/view/lists.rs)         | Sidebar rail (collapsed) / panel (expanded), list rows, rename + clear-all modals, empty-state prompt; exports `RENAME_INPUT_ID` |
-| [view/tasks.rs](../main_src/src/app/view/tasks.rs)         | Task workspace: header + composer row + task list + actions row                                                                  |
-| [view/workspace.rs](../main_src/src/app/view/workspace.rs) | Scrollable task list + per-task card (checkbox, title, status, delete)                                                           |
-| [view/settings.rs](../main_src/src/app/view/settings.rs)   | Settings page (replaces workspace): theme select, hotkey capture/reset, reopen-last + confirm-clear + hotkey-enabled toggles     |
+| [ui/mod.rs](../main_src/src/app/ui/mod.rs)             | Top-level composer: `view_root` (sidebar + content + status bar + modals), `workspace_or_prompt`, `status_bar`, `list_sidebar`   |
+| [ui/header.rs](../main_src/src/app/ui/header.rs)       | Open-list top bar: title, count, control buttons (panel/import/export/theme/undo/redo)                                           |
+| [ui/lists.rs](../main_src/src/app/ui/lists.rs)         | Sidebar rail (collapsed) / panel (expanded), list rows, rename + clear-all modals, empty-state prompt; exports `RENAME_INPUT_ID` |
+| [ui/tasks.rs](../main_src/src/app/ui/tasks.rs)         | Task workspace: header + composer row + task list + actions row                                                                  |
+| [ui/workspace.rs](../main_src/src/app/ui/workspace.rs) | Scrollable task list + flat per-task row (checkbox, title, status, attach/delete)                                                           |
+| [ui/settings.rs](../main_src/src/app/ui/settings.rs)   | Settings page (replaces workspace): theme select, hotkey capture/reset, reopen-last + confirm-clear + hotkey-enabled toggles     |
 
 ## Other
 

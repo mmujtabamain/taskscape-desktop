@@ -16,7 +16,7 @@ High-level model of how Taskscape runs. File-level detail is in
         └───────────┬─────────────┘                               └────────────┬─────────────┘
                     │                                                           │
                     │ both link to ───────────────► common (taskscape-common) ◄┘
-                    │   models · ipc · storage · thememanager · widgets · utils · hotkey
+                    │   models · ipc · storage · ui · utils · hotkey
                     │
             on startup: app::ensure_tray_running() spawns the tray binary
             if the socket isn't already being served (main_src/.../launch.rs)
@@ -68,7 +68,7 @@ See [ipc.md](ipc.md) for the message set and framing.
 user action ─► Message ─► update() ─┬─► state mutation        (actions.rs / update.rs)
                                      ├─► persist to disk       (storage.rs)
                                      └─► broadcast over IPC     (sync.rs)  ─► other process mirrors it
-view() reads state (+ queries.rs) ─► widgets (common::widgets, common::thememanager)
+view() reads state (+ queries.rs) ─► widgets (common::ui)
 ```
 
 Undo/redo (main only): a snapshot of the task list is pushed before each

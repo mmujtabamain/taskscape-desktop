@@ -1,74 +1,51 @@
 # Agent TODO — UI Reinvention ("Concrete & Bronze")
 
 Living progress tracker for the redesign. Plan: [agent.plan.md](agent.plan.md).
-Updated as work proceeds; `[x]` done, `[~]` in progress, `[ ]` pending. Notes
-inline.
+`[x]` done, `[~]` in progress, `[ ]` pending.
 
-## Phase 1 — Foundation (fonts, icons, ui tokens/theme/motion)
-- [x] Download Montserrat + Raleway (OFL) static weights into `assets/fonts/`
-- [x] Download Material Symbols Sharp (full, dev resource) + codepoints into `assets/fonts/`
-- [x] Subset icon font → `MaterialSymbolsSharp-subset.ttf` (4.4KB, 28 glyphs) + `regen-subset.sh` + `used-icons.txt`
-- [~] Rework `common/src/utils/fonts.rs`: ADD Montserrat/Raleway/MS-Sharp builders (keep Inter/Poppins until screens migrate)
-- [ ] `common/src/ui/tokens.rs` — palette roles, radii, spacing, type sizes/weights, motion presets
-- [ ] `common/src/ui/theme.rs` — `app_theme`/`tokens` (gray+bronze), `ThemeMode`, color helpers
-- [ ] `common/src/ui/motion.rs` — durations/easings, tween helper, reduce-motion gate
-- [ ] `common/src/ui/components/icon.rs` — MS-Sharp glyph map (~28 icons)
-- [ ] `cargo check`
+## Phase 1 — Foundation ✅
+- [x] Montserrat + Raleway (OFL) static weights in `assets/fonts/`
+- [x] Material Symbols Sharp full font (dev) + codepoints; subset → `MaterialSymbolsSharp-subset.ttf` (4.4KB, 28 glyphs) + `regen-subset.sh` + `used-icons.txt`
+- [x] `common/src/utils/fonts.rs` — Montserrat/Raleway/MS-Sharp builders + `REGISTERED_FONT_BYTES`
+- [x] `common/src/ui/{tokens,theme,motion}.rs` — gray+bronze palette, radii, spacing, type, motion
+- [x] `common/src/ui/components/icon.rs` — MS-Sharp glyph map (28 icons)
 
-**Notes:**
-- **Migration ordering (keep build green):** build new `common::ui` ALONGSIDE old
-  `widgets`/`thememanager`; old code keeps compiling. Switch screen imports in
-  Phases 4–5, then delete old `widgets`+`thememanager`, drop `lucide-icons` dep, and
-  remove Inter/Poppins font builders/bytes. So "remove lucide / switch lib.rs" lands
-  at the END of Phase 5, not Phase 3.
-- Fontsource static weights have **no typographic family** — each weight is its own
-  family ("Montserrat", "Montserrat Medium", "Montserrat SemiBold", "Raleway",
-  "Raleway Medium", "Raleway SemiBold"). `fonts.rs` selects by exact family name.
-- Icon font family name = `Material Symbols Sharp`. Add new icons by editing
-  `used-icons.txt` + running `regen-subset.sh` (needs fonttools venv; no internet).
-- Inter/Poppins TTFs left in `assets/fonts/` for now (unused once migrated); not
-  deleting tracked files — you can `git rm` them later.
+## Phase 2 — Animated `interactive` primitive ✅
+- [x] Custom `Widget` with hover/press `Animation` in `tree::State`, self-driven redraws, fill+ring+lift
 
-## Phase 2 — Animated `interactive.rs` primitive
-- [ ] Custom `Widget` with hover/press/focus `Animation` in `tree::State`, self-driven redraws
-- [ ] Prove behind one button; `cargo check`
+## Phase 3 — Component toolkit ✅
+- [x] button, icon_button, text_input, checkbox, toggle, chip (+attachment), dropdown, typography, editable_title, metric, containers (incl. glass mini-shell)
 
-**Notes:**
-- _(none yet)_
+## Phase 4 — Main window screens ✅
+- [x] `view/` → `app/ui/`; all screens on `common::ui`; hardcoded values → tokens
+- [x] Reduce-motion: config field + Settings toggle + `motion::set_reduce_motion`
+- [~] App-state choreography (theme cross-fade, modal/sidebar tweens) **DEFERRED** —
+  per-widget hover/press motion (interactive) is the core ask and ships; app-state
+  frames-driven tweens need a redraw loop and are left as a follow-up (kept instant).
 
-## Phase 3 — Component toolkit
-- [ ] Port button, text_input, checkbox, toggle, chip, dropdown, typography, editable_title, metric, attachment
-- [ ] `containers.rs` (shell/panel/modal/sidebar + glass mini-shell)
-- [ ] Switch `common/src/lib.rs` to `ui`; keep API names stable; `cargo build`
+## Phase 5 — Tray mini + frosted glass ✅
+- [x] `mini.rs` → `app/ui/{mini,quit_confirm}.rs`; on `common::ui`
+- [x] Native `NSVisualEffectView` frost (`tray::frost_window`, BehindWindow/HUDWindow), wired on mini + confirm open; `"NSVisualEffectView"`+`"NSGraphics"` features
+- [x] Fonts registered; reduce-motion from config
 
-**Notes:**
-- _(none yet)_
+## Phase 5b — Remove legacy ✅
+- [x] Deleted `common/src/widgets` + `common/src/thememanager`; `ThemeMode` now in `ui::theme`
+- [x] Dropped `lucide-icons` from all crates; retired Inter/Poppins builders
+- [x] Enabled iced `advanced` feature on common (custom Widget). **Full `cargo build` clean.**
 
-## Phase 4 — Main window screens
-- [ ] Move `view/` → `app/ui/`; update `app/mod.rs`
-- [ ] Centralize hardcoded radii/spacing/sizes into tokens
-- [ ] App-state animations (theme cross-fade, modal, sidebar) + `Tick` + gated `window::frames()`
-- [ ] Reduce-motion config field + Settings toggle
-- [ ] `cargo build` + `./run-dev.sh`
+## Phase 6 — Docs ✅
+- [x] `PRODUCT.md` — personality/anti-refs reconciled with gray+bronze
+- [x] `DESIGN.md` + `.impeccable/design.json` — rewritten for Concrete & Bronze
+- [x] `.index/{theming,where-to-fix,common,main,tray,README,architecture,glossary}.md`
+- [x] `CLAUDE.md` + `common/Cargo.toml` comment
 
-**Notes:**
-- _(none yet)_
+## DONE — full `cargo build` clean. Hand off to user for visual verification.
 
-## Phase 5 — Tray mini + frosted glass
-- [ ] Move `mini.rs` → `app/ui/mini.rs`; split `quit_confirm.rs`
-- [ ] Add `"NSVisualEffectView"` feature; insert vibrancy behind Iced surface (validate FIRST)
-- [ ] Transparent mini-shell background; rounded-corner clip; edge stroke
-- [ ] Mini open/close animation + frames subscription
-- [ ] `cargo build` + `./run-dev.sh tray`
-
-**Notes:**
-- _(none yet)_
-
-## Phase 6 — Docs
-- [ ] Refresh `PRODUCT.md` (personality/anti-ref language; reconcile gray vs "sterile gray")
-- [ ] Rewrite `DESIGN.md` + `.impeccable/design.json` for the new identity
-- [ ] Update `.index/{theming,where-to-fix,common,main,tray,README}.md`
-- [ ] Update `CLAUDE.md` (new `ui/` layout; retired Poppins/Inter/Lucide)
-
-**Notes:**
-- _(none yet)_
+## Notes / follow-ups
+- Inter/Poppins TTFs still on disk under `assets/fonts/` (unused) — safe to `git rm`.
+- App-state animation choreography deferred (see Phase 4). To enable: add a
+  `window::frames()`-driven `Tick` + per-moment `Animation`s in app state.
+- Add icons later: edit `assets/fonts/MaterialSymbols/used-icons.txt` + run
+  `regen-subset.sh` (+ a variant in `ui/components/icon.rs`). No internet needed.
+- Verify (user): both themes, reduce-motion, AA contrast, the frosted mini window
+  over a real desktop, hover/press across all controls.

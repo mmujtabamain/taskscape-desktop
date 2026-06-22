@@ -4,15 +4,15 @@ version = "0.1.0"
 edition = "2024"
 
 # Shared, non-executable library: task interfaces/models, the IPC protocol and
-# transport, the theme manager, the generic widget toolkit, and shared utils.
-# Both the `main` and `tray` binary crates depend on this.
+# transport, the `ui` design system (theme/tokens/motion + animated component
+# toolkit), and shared utils. Both the `main` and `tray` binary crates depend on it.
 [lib]
 name = "common"
 path = "src/lib.rs"
 
 [dependencies]
-# `image` enables the `image` widget used to render attachment thumbnails.
-iced = { version = "0.14", features = ["image"] }
-lucide-icons = { version = "1.14.0", features = ["iced"] }
+# `advanced`: custom `Widget` impls (the animated `ui::components::interactive`).
+# `image`: the `image` widget used to render attachment thumbnails.
+iced = { version = "0.14", features = ["image", "advanced"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"

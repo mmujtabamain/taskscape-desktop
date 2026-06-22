@@ -1,22 +1,20 @@
 use crate::app::{AppElement, AttachTarget, Message, Taskscape};
-use common::thememanager::ButtonKind;
-use common::widgets::{t_attachment_chip, t_button, t_icon_button_ghost, t_input_box};
+use common::ui::tokens::space;
+use common::ui::{
+    ButtonKind, Icon, t_attachment_chip, t_button, t_icon_button_ghost, t_input_box,
+};
 use iced::Alignment;
 use iced::Length;
 use iced::widget::{column, row};
-use lucide_icons::Icon;
 
 impl Taskscape {
     pub(crate) fn tasks_view(&self) -> AppElement<'_> {
-        let mut content = column![self.header(), self.composer_row(),]
+        column![self.header(), self.composer_row()]
             .height(Length::Fill)
-            .spacing(10);
-
-        content = content
+            .spacing(space::LG)
             .push(self.task_list_panel())
-            .push(self.actions_row());
-
-        content.into()
+            .push(self.actions_row())
+            .into()
     }
 
     fn composer_row(&self) -> AppElement<'_> {
@@ -31,7 +29,7 @@ impl Taskscape {
             ),
             t_icon_button_ghost(
                 self.theme_mode,
-                Icon::Paperclip,
+                Icon::Attach,
                 Some(Message::AttachFile(AttachTarget::Composer)),
             ),
             t_icon_button_ghost(
@@ -41,20 +39,20 @@ impl Taskscape {
             ),
             t_button(
                 self.theme_mode,
-                Some(Icon::CirclePlus),
+                Some(Icon::AddCircle),
                 "Add",
                 ButtonKind::Primary,
                 Some(Message::AddTask),
             ),
         ]
-        .spacing(8)
+        .spacing(space::MD)
         .align_y(Alignment::Center);
 
         if self.staged_attachments.is_empty() {
             input_row.into()
         } else {
             let chips = self.staged_attachments.iter().enumerate().fold(
-                row![].spacing(6),
+                row![].spacing(space::SM),
                 |chips, (index, attachment)| {
                     chips.push(t_attachment_chip(
                         self.theme_mode,
@@ -64,7 +62,7 @@ impl Taskscape {
                     ))
                 },
             );
-            column![input_row, chips].spacing(8).into()
+            column![input_row, chips].spacing(space::MD).into()
         }
     }
 
@@ -72,20 +70,20 @@ impl Taskscape {
         row![
             t_button(
                 self.theme_mode,
-                Some(Icon::CheckCheck),
+                Some(Icon::CheckAll),
                 "Clear completed",
                 ButtonKind::Ghost,
                 Some(Message::ClearCompleted),
             ),
             t_button(
                 self.theme_mode,
-                Some(Icon::CircleX),
+                Some(Icon::Cancel),
                 "Clear all",
                 ButtonKind::Ghost,
                 Some(Message::RequestClearAll),
             ),
         ]
-        .spacing(8)
+        .spacing(space::MD)
         .into()
     }
 }

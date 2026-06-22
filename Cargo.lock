@@ -2449,15 +2449,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f66e8d5d03f609abc3a39e6f08e4164ebf1447a732906d39eb9b99b7919ef39"
 
 [[package]]
-name = "lucide-icons"
-version = "1.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23e4d7bc2544efdb4e5382c77f751b3349abbada35cdba947636fe775cd4a098"
-dependencies = [
- "iced",
-]
-
-[[package]]
 name = "malloc_buf"
 version = "0.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4176,7 +4167,6 @@ name = "taskscape"
 version = "0.1.0"
 dependencies = [
  "iced",
- "lucide-icons",
  "muda",
  "rfd",
  "serde",
@@ -4188,7 +4178,6 @@ name = "taskscape-common"
 version = "0.1.0"
 dependencies = [
  "iced",
- "lucide-icons",
  "serde",
  "serde_json",
 ]
@@ -4199,7 +4188,6 @@ version = "0.1.0"
 dependencies = [
  "global-hotkey",
  "iced",
- "lucide-icons",
  "objc2-app-kit 0.3.2",
  "objc2-foundation 0.3.2",
  "objc2-quartz-core 0.3.2",

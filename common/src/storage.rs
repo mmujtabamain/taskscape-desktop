@@ -12,7 +12,7 @@
 
 use crate::hotkey::HotkeySpec;
 use crate::models::Task;
-use crate::thememanager::ThemeMode;
+use crate::ui::theme::ThemeMode;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
@@ -50,6 +50,8 @@ pub struct Config {
     pub hotkey_enabled: bool,
     /// The mini-window global hotkey; `None` means use the built-in default.
     pub hotkey: Option<HotkeySpec>,
+    /// Collapse UI animations to instant (accessibility / preference).
+    pub reduce_motion: bool,
 }
 
 impl Default for Config {
@@ -61,6 +63,7 @@ impl Default for Config {
             confirm_clear_all: true,
             hotkey_enabled: true,
             hotkey: None,
+            reduce_motion: false,
         }
     }
 }
