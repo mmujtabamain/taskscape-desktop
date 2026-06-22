@@ -5,17 +5,29 @@ Updated as work proceeds; `[x]` done, `[~]` in progress, `[ ]` pending. Notes
 inline.
 
 ## Phase 1 — Foundation (fonts, icons, ui tokens/theme/motion)
-- [~] Download Montserrat + Raleway (OFL) static weights into `assets/fonts/`
-- [ ] Download Material Symbols Sharp icon font into `assets/fonts/`
-- [ ] Rework `common/src/utils/fonts.rs`: embed Montserrat/Raleway/MS-Sharp; drop Poppins/Inter
+- [x] Download Montserrat + Raleway (OFL) static weights into `assets/fonts/`
+- [x] Download Material Symbols Sharp (full, dev resource) + codepoints into `assets/fonts/`
+- [x] Subset icon font → `MaterialSymbolsSharp-subset.ttf` (4.4KB, 28 glyphs) + `regen-subset.sh` + `used-icons.txt`
+- [~] Rework `common/src/utils/fonts.rs`: ADD Montserrat/Raleway/MS-Sharp builders (keep Inter/Poppins until screens migrate)
 - [ ] `common/src/ui/tokens.rs` — palette roles, radii, spacing, type sizes/weights, motion presets
 - [ ] `common/src/ui/theme.rs` — `app_theme`/`tokens` (gray+bronze), `ThemeMode`, color helpers
 - [ ] `common/src/ui/motion.rs` — durations/easings, tween helper, reduce-motion gate
-- [ ] `common/src/ui/components/icon.rs` — MS-Sharp glyph map (~28 icons); remove `lucide-icons` from 3 crates
+- [ ] `common/src/ui/components/icon.rs` — MS-Sharp glyph map (~28 icons)
 - [ ] `cargo check`
 
 **Notes:**
-- _(none yet)_
+- **Migration ordering (keep build green):** build new `common::ui` ALONGSIDE old
+  `widgets`/`thememanager`; old code keeps compiling. Switch screen imports in
+  Phases 4–5, then delete old `widgets`+`thememanager`, drop `lucide-icons` dep, and
+  remove Inter/Poppins font builders/bytes. So "remove lucide / switch lib.rs" lands
+  at the END of Phase 5, not Phase 3.
+- Fontsource static weights have **no typographic family** — each weight is its own
+  family ("Montserrat", "Montserrat Medium", "Montserrat SemiBold", "Raleway",
+  "Raleway Medium", "Raleway SemiBold"). `fonts.rs` selects by exact family name.
+- Icon font family name = `Material Symbols Sharp`. Add new icons by editing
+  `used-icons.txt` + running `regen-subset.sh` (needs fonttools venv; no internet).
+- Inter/Poppins TTFs left in `assets/fonts/` for now (unused once migrated); not
+  deleting tracked files — you can `git rm` them later.
 
 ## Phase 2 — Animated `interactive.rs` primitive
 - [ ] Custom `Widget` with hover/press/focus `Animation` in `tree::State`, self-driven redraws

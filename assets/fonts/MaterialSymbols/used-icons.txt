@@ -1,0 +1,34 @@
+# Material Symbols Sharp glyphs embedded into the binaries (subset).
+# One Material Symbols name per line. Edit, then run ./regen-subset.sh to rebuild
+# MaterialSymbolsSharp-subset.ttf. The full MaterialSymbolsSharp.ttf stays in the
+# repo so any icon can be added here without an internet connection.
+# (App-semantic name in the comment; see common/src/ui/components/icon.rs.)
+
+menu_open            # panel toggle
+left_panel_open      # sidebar open
+left_panel_close     # sidebar close
+download             # import
+upload               # export
+light_mode           # theme: light
+dark_mode            # theme: dark
+undo
+redo
+delete               # remove task / clear
+attach_file          # attach file
+photo_camera         # screenshot
+add                  # plus
+add_circle           # create
+settings
+edit                 # rename / pencil
+check
+done_all             # clear completed
+playlist_add         # new list
+cancel               # remove staged / x-circle
+fiber_manual_record  # link-status dot (filled)
+power_settings_new   # quit
+keyboard_return      # enter hint
+checklist            # empty list-todo
+keyboard_arrow_down  # chevron down
+keyboard             # hotkey
+restart_alt          # reset hotkey
+close                # close / x
