@@ -182,14 +182,25 @@ impl Taskscape {
             Message::ExportListResult(None) => {
                 self.status_message = String::from("Export cancelled.");
             }
+            Message::DragWindow => {
+                if let Some(id) = self.window_id {
+                    return window::drag(id);
+                }
+            }
             Message::WindowOpened(window_id) => {
                 self.window_id = Some(window_id);
-                // The native menu must be installed on the UI thread; window::run
-                // guarantees that.
-                return window::run(window_id, |window| {
+                // Both run on the UI thread (window::run guarantees it): style the
+                // window chrome (transparent title bar + frosted backdrop) and
+                // install the native menu.
+                let chrome = window::run(window_id, |window| {
+                    crate::app::chrome::apply(window);
+                })
+                .discard();
+                let menu = window::run(window_id, |window| {
                     crate::app::native_menu::install_for_window(window)
                 })
                 .map(Message::NativeMenuInstalled);
+                return Task::batch([chrome, menu]);
             }
             Message::WindowClosed(window_id) => {
                 if self.window_id == Some(window_id) {

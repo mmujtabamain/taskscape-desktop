@@ -42,7 +42,7 @@ Composable Iced builders that already apply theme + fonts + motion. Re-exported 
 | `t_editable_title` (`TITLE_INPUT_ID`)  | editable_title.rs | Inline-editable 32px Raleway title                 |
 | `t_metric`                             | metric.rs         | Flat value+label readout (not a card)              |
 | `icon` + `Icon`                        | icon.rs           | A Material Symbols Sharp glyph                      |
-| `shell`/`glass_shell`/`surface`/`raised`/`bar`/`divider`/`sidebar`/`modal_backdrop`/`modal_card` | containers.rs | Container styles |
+| `shell`/`glass_shell`/`frosted_shell`/`surface`/`raised`/`bar`/`divider`/`sidebar`/`modal_backdrop`/`modal_card` | containers.rs | Container styles (`frosted_shell` = full-bleed glass tint for the frosted main window) |
 
 ### Adding/altering a look
 - New color → add to `Palette` + set both modes in `palette()` (theme.rs).
@@ -68,9 +68,17 @@ Embedded TTF bytes + `Font` builders in [../common/src/utils/fonts.rs](../common
 a variant in `ui/components/icon.rs`. Sources under
 [../assets/fonts/](../assets/fonts/) (Montserrat, Raleway, MaterialSymbols).
 
-## Native frosted glass (tray mini window)
+## Native frosted glass (both windows)
 
-The mini window is a transparent window with a native `NSVisualEffectView` (system
-blur) inserted behind the Iced content — see `tray::frost_window` in
-[../tray_src/src/app/tray.rs](../tray_src/src/app/tray.rs). `glass_shell` lays a faint
-tint + 1px edge on top; corners are clipped via CALayer (`round_window`).
+Both windows are transparent windows with a native `NSVisualEffectView` (system
+blur) inserted **behind** the Iced content (the blur renders before the content,
+never on top):
+
+- **Mini window** — `tray::frost_window` in
+  [../tray_src/src/app/tray.rs](../tray_src/src/app/tray.rs); borderless HUD, corners
+  clipped via CALayer (`round_window`). `glass_shell` lays a faint tint + 1px edge on top.
+- **Main window** — `chrome::apply` in
+  [../main_src/src/app/chrome.rs](../main_src/src/app/chrome.rs); also makes the system
+  title bar transparent + full-size content view (native traffic lights kept, custom
+  title bar drawn in [../main_src/src/app/ui/titlebar.rs](../main_src/src/app/ui/titlebar.rs)).
+  `frosted_shell` lays the full-bleed tint on top; native frame supplies the rounded corners + shadow.

@@ -16,6 +16,7 @@ modules by concern.
 | [src/app/mod.rs](../main_src/src/app/mod.rs)                 | **`Taskscape` state struct** (~22 fields) + **`Message` enum** (~45 variants); `boot`, `title`, `theme`, `view_window`, `subscription`, `run`; type aliases `AppElement`, `AppTask` |
 | [src/app/launch.rs](../main_src/src/app/launch.rs)           | `ensure_tray_running`: spawn the tray binary if the socket isn't served (packaged: the nested `.app`; dev: sibling `taskscape-tray`)                                                |
 | [src/app/native_menu.rs](../main_src/src/app/native_menu.rs) | Native menu bar (muda): `NativeMenuCommand`, `install_for_window`, `build_menu`, `subscription` (macOS ✓ / Windows ✓ / Linux ✗)                                                     |
+| [src/app/chrome.rs](../main_src/src/app/chrome.rs)           | macOS window chrome: `apply` — transparent system title bar + full-size content view (keeps native traffic lights) and the frosted-glass `NSVisualEffectView` *behind* the transparent Iced surface. `#[cfg(macos)]`-gated, non-macOS stub. Applied on `WindowOpened` |
 
 ## update / state logic
 
@@ -31,7 +32,8 @@ modules by concern.
 
 | File                                                       | Purpose                                                                                                                          |
 | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| [ui/mod.rs](../main_src/src/app/ui/mod.rs)             | Top-level composer: `view_root` (sidebar + content + status bar + modals), `workspace_or_prompt`, `status_bar`, `list_sidebar`   |
+| [ui/mod.rs](../main_src/src/app/ui/mod.rs)             | Top-level composer: `view_root` (title bar + sidebar + content + status bar + modals), `workspace_or_prompt`, `status_bar`, `list_sidebar`; the whole window is one `frosted_shell` surface |
+| [ui/titlebar.rs](../main_src/src/app/ui/titlebar.rs)   | Custom title bar (`title_bar`): draggable full-width strip (`Message::DragWindow` → `window::drag`) with a traffic-light gutter + centered wordmark, replacing the transparent system bar |
 | [ui/header.rs](../main_src/src/app/ui/header.rs)       | Open-list top bar: title, count, control buttons (panel/import/export/theme/undo/redo)                                           |
 | [ui/lists.rs](../main_src/src/app/ui/lists.rs)         | Sidebar rail (collapsed) / panel (expanded), list rows, rename + clear-all modals, empty-state prompt; exports `RENAME_INPUT_ID` |
 | [ui/tasks.rs](../main_src/src/app/ui/tasks.rs)         | Task workspace: header + composer row + task list + actions row                                                                  |

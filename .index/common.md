@@ -58,7 +58,7 @@ toolkit. Replaces the former `thememanager` + `widgets`.
 | [ui/components/editable_title.rs](../common/src/ui/components/editable_title.rs) | `t_editable_title`; `TITLE_INPUT_ID`                                       |
 | [ui/components/metric.rs](../common/src/ui/components/metric.rs)   | `t_metric` (flat value+label)                                                            |
 | [ui/components/icon.rs](../common/src/ui/components/icon.rs)       | `Icon` enum + `icon(symbol, size, color)` (Material Symbols Sharp)                       |
-| [ui/components/containers.rs](../common/src/ui/components/containers.rs) | `shell`/`glass_shell`/`surface`/`raised`/`bar`/`divider`/`sidebar`/`modal_*` styles |
+| [ui/components/containers.rs](../common/src/ui/components/containers.rs) | `shell`/`glass_shell`/`frosted_shell`/`surface`/`raised`/`bar`/`divider`/`sidebar`/`modal_*` styles |
 
 ## Utils — `src/utils/`
 

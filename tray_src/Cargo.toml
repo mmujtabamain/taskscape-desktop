@@ -23,7 +23,8 @@ rfd = "0.15"
 # `NSApplication`: activate the (accessory) app so the mini window can take focus.
 # `NSEvent`: read the global mouse location to summon the window at the cursor.
 # `NSVisualEffectView` (+ `NSGraphics` for `NSWindowOrderingMode`): the Spotlight-
-# style frosted-glass blur behind the transparent mini window.
+# style frosted-glass blur, added behind the Iced content view as a sibling in the
+# window frame so it sits behind the transparent mini window.
 objc2-app-kit = { version = "0.3", features = ["NSScreen", "NSView", "NSWindow", "NSResponder", "NSColor", "NSApplication", "NSEvent", "NSVisualEffectView", "NSGraphics"] }
 objc2-foundation = "0.3"
 # CALayer (cornerRadius + masksToBounds) to clip the window's GPU surface to a

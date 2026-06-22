@@ -165,11 +165,18 @@ pub fn round_window(
 ) {
 }
 
-/// Inserts a native `NSVisualEffectView` (system blur) *behind* the Iced content
-/// of a transparent window, giving the Spotlight-style frosted glass. The Iced
-/// surface stays transparent (only `glass_shell`'s faint tint sits on top), so the
-/// desktop behind the window shows through, blurred. Rounded to `radius` to match
-/// the window clip. Must run on the UI thread (call inside `window::run`).
+/// Puts a native `NSVisualEffectView` (system blur) *behind* the Iced content of a
+/// transparent window, giving the Spotlight-style frosted glass. The Iced surface
+/// stays transparent (only `glass_shell`'s faint tint sits on top), so the desktop
+/// behind the window shows through, blurred. Rounded to `radius` to match the
+/// window clip. Must run on the UI thread (call inside `window::run`).
+///
+/// The Iced view renders into its *own* backing layer, so a view merely added
+/// "below" it as a subview still composites on top (covering the content), and
+/// re-parenting the Iced view crashes winit (it must stay the window's content
+/// view). Instead the vibrancy view is added to the content view's *superview*
+/// (the window frame), positioned behind the content view — a sibling, which puts
+/// the blur behind without disturbing winit.
 #[cfg(target_os = "macos")]
 pub fn frost_window(handle: &dyn iced::window::raw_window_handle::HasWindowHandle, radius: f64) {
     use iced::window::raw_window_handle::RawWindowHandle;
@@ -190,12 +197,17 @@ pub fn frost_window(handle: &dyn iced::window::raw_window_handle::HasWindowHandl
     };
 
     // SAFETY: on the UI thread (window::run guarantees it); the view pointer is
-    // valid for the call. The effect view is owned by the content view once added.
+    // valid for the call. The effect view is owned by the frame view once added.
     unsafe {
         let content: &NSView = appkit.ns_view.cast().as_ref();
-        let frame = content.bounds();
+        let Some(frame_view) = content.superview() else {
+            return;
+        };
 
-        let effect = NSVisualEffectView::initWithFrame(mtm.alloc::<NSVisualEffectView>(), frame);
+        let effect = NSVisualEffectView::initWithFrame(
+            mtm.alloc::<NSVisualEffectView>(),
+            frame_view.bounds(),
+        );
         effect.setMaterial(NSVisualEffectMaterial::HUDWindow);
         effect.setBlendingMode(NSVisualEffectBlendingMode::BehindWindow);
         effect.setState(NSVisualEffectState::Active);
@@ -203,15 +215,15 @@ pub fn frost_window(handle: &dyn iced::window::raw_window_handle::HasWindowHandl
             NSAutoresizingMaskOptions::ViewWidthSizable
                 | NSAutoresizingMaskOptions::ViewHeightSizable,
         );
+        // Clip the blur to the rounded rect so its corners match the window (the
+        // Iced content view is rounded separately by `round_window`).
         effect.setWantsLayer(true);
         if let Some(layer) = effect.layer() {
             layer.setCornerRadius(radius);
             layer.setMasksToBounds(true);
         }
 
-        // Place it below the Iced (wgpu) layer so the blur shows through the
-        // transparent surface.
-        content.addSubview_positioned_relativeTo(&effect, NSWindowOrderingMode::Below, None);
+        frame_view.addSubview_positioned_relativeTo(&effect, NSWindowOrderingMode::Below, None);
     }
 }
 

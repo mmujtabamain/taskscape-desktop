@@ -1,6 +1,7 @@
 //! The main-window application: state, message types, and the iced wiring.
 
 mod actions;
+mod chrome;
 mod launch;
 mod native_menu;
 mod queries;
@@ -122,6 +123,9 @@ pub enum Message {
     ExportList,
     ExportListResult(Option<PathBuf>),
     // --- Window / integration plumbing ---
+    /// Start dragging the window by its custom title bar (the system bar is
+    /// transparent, so the title bar handles the drag itself).
+    DragWindow,
     WindowOpened(window::Id),
     WindowClosed(window::Id),
     WindowCloseRequested(window::Id),
@@ -220,6 +224,10 @@ impl Taskscape {
             // so closing the window quits the app rather than leaving the daemon
             // running windowless.
             exit_on_close_request: false,
+            // Transparent so the native frosted-glass backdrop shows through the
+            // Iced surface; the system title bar is replaced by our own (see
+            // `chrome::apply`, applied on `WindowOpened`).
+            transparent: true,
             ..window::Settings::default()
         }
     }

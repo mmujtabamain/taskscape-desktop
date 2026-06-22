@@ -32,6 +32,17 @@ pub fn glass_shell(mode: ThemeMode) -> impl Fn(&Theme) -> container::Style + Clo
     }
 }
 
+/// The frosted **main-window** shell: just the faint glass tint, full-bleed with
+/// no border or radius (the native window frame supplies the edge + rounded
+/// corners). Laid over the native vibrancy backdrop (`chrome::apply`) so the
+/// desktop shows through, blurred.
+pub fn frosted_shell(mode: ThemeMode) -> impl Fn(&Theme) -> container::Style + Clone {
+    move |_t: &Theme| {
+        let p = palette(mode);
+        base(&p).background(p.glass_tint)
+    }
+}
+
 /// A mid surface (filled, no border) — panels, the task-list area.
 pub fn surface(mode: ThemeMode) -> impl Fn(&Theme) -> container::Style + Clone {
     move |_t: &Theme| {

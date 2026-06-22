@@ -69,8 +69,11 @@ cargo check                              # fast type-check
   `ui::components::interactive` widget (needs iced's `advanced` feature). Each
   binary's screens live under its own `app/ui/`. **Fill over outline**: a filled
   surface never also carries a border.
-- macOS-only native code (objc2 AppKit/QuartzCore) lives in the tray crate and
-  is `#[cfg(target_os = "macos")]`-gated with non-macOS stubs.
+- macOS-only native code (objc2 AppKit/QuartzCore) lives in the tray crate
+  ([tray_src/src/app/tray.rs](tray_src/src/app/tray.rs)) and the main crate
+  ([main_src/src/app/chrome.rs](main_src/src/app/chrome.rs) — the main window's
+  transparent title bar + frosted backdrop). All `#[cfg(target_os = "macos")]`-gated
+  with non-macOS stubs.
 
 ## Design Context
 
@@ -81,8 +84,10 @@ captured in [DESIGN.md](DESIGN.md). Read them before any UI work.
 - **Users:** macOS power users; keyboard-first, menu-bar-resident, native feel.
 - **Identity:** "Concrete & Bronze" — calm **gray** field, one warm **bronze**
   accent (the action). Sharpened but **rounded** (no sharp corners, no pills);
-  fill-over-outline. The mini window is **frosted glass** (Spotlight-like, via
-  `NSVisualEffectView`); the main window is solid matte. UI in `common/src/ui/`
+  fill-over-outline. Both windows are **frosted glass** (Spotlight-like, via
+  `NSVisualEffectView` placed *behind* the transparent Iced surface): the mini
+  window is a floating HUD; the main window pairs it with a **custom title bar**
+  (transparent system bar + native traffic lights). UI in `common/src/ui/`
   + each binary's `app/ui/`.
 - **Principles:** (1) capture beats organize, (2) calm by subtraction, (3) warmth
   without noise (one bronze signal), (4) native craft, (5) legible in both themes
