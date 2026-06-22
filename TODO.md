@@ -22,3 +22,8 @@
 - [x] Light mode for mini window
 - [x] Reduce spacing of mini window
 - [x] Tone down the roundness
+
+## Jun 19 2026
+
+- [ ] Diffrentiate Linked vs Copied attachements
+- [ ] Fix UI hover Highlights across app
