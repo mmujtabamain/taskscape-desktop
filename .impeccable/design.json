@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-22T00:00:00Z",
+  "title": "Design System: Taskscape",
+  "note": "Taskscape is a native macOS app (Rust + Iced), not a web project. The live preview panel renders HTML/CSS in a browser and does not apply here, so component HTML/CSS snippets are intentionally omitted. This sidecar carries the framework-agnostic extension data (color metadata, tonal ramps, shadow vocabulary, narrative) that augments DESIGN.md. Values reflect the canonical DARK theme; light-theme counterparts are documented in DESIGN.md §2.",
+  "extensions": {
+    "colorMeta": {
+      "accent": { "role": "primary", "displayName": "Ember Coral", "canonical": "#FF7C5D", "tonalRamp": ["#6B3528","#974A38","#C45F48","#EB7256","#FE886A","#FCA186","#FABFA8","#F7DECB"] },
+      "accent-text": { "role": "primary", "displayName": "Accent Ink", "canonical": "#21110E" },
+      "bg-bottom": { "role": "neutral", "displayName": "Toasted Brown (body)", "canonical": "#2B1C16", "tonalRamp": ["#160E0B","#1C120E","#231612","#281A15","#3F312A","#6C6056","#A1968A","#D8CFC0"] },
+      "panel-alt": { "role": "neutral", "displayName": "Warm Cocoa (mid surface)", "canonical": "#3C2D26", "tonalRamp": ["#1D1512","#261C18","#30231E","#382A23","#4F4038","#786B61","#A89E91","#DAD2C2"] },
+      "panel-raised": { "role": "neutral", "displayName": "Espresso (top surface)", "canonical": "#2B211B", "tonalRamp": ["#16100D","#1C1511","#231A15","#281F19","#3F362F","#6C6359","#A1988C","#D8D0C1"] },
+      "text-primary": { "role": "neutral", "displayName": "Warm Cream", "canonical": "#F5E7D4", "tonalRamp": ["#675F57","#91887D","#BCB1A2","#E2D5C3","#F5E8D5","#F5EAD7","#F6ECDA","#F6EEDD"] },
+      "text-secondary": { "role": "neutral", "displayName": "Sand", "canonical": "#C9B199" },
+      "text-muted": { "role": "neutral", "displayName": "Faded Taupe", "canonical": "#9B7F6C" },
+      "success": { "role": "tertiary", "displayName": "Success Sage", "canonical": "#81B27D" },
+      "danger": { "role": "tertiary", "displayName": "Danger Clay", "canonical": "#E27F67" },
+      "warning": { "role": "tertiary", "displayName": "Warning Amber", "canonical": "#E4B262" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "The editable list title only — the one large, confident moment (Poppins SemiBold 40px)." },
+      "headline": { "displayName": "Headline", "purpose": "Primary screen/section headings and empty-state titles (Poppins SemiBold 26px)." },
+      "title": { "displayName": "Title", "purpose": "Modal titles and sub-section headers (Poppins SemiBold 17–22px)." },
+      "body": { "displayName": "Body", "purpose": "Task text, button labels, input values (Inter Regular 14–16px)." },
+      "label": { "displayName": "Label", "purpose": "Captions, chips, metric counts, quiet metadata (Inter Regular 11–13px)." }
+    },
+    "shadows": [
+      { "name": "action-lift", "value": "0 0 14px rgba(8,5,4,0.35)", "purpose": "The primary (coral) button only — a soft halo that says 'press me'; removed on :active." },
+      { "name": "modal-lift", "value": "0 8px 28px rgba(8,5,4,0.35)", "purpose": "The centered modal card floating above its dimmed backdrop." },
+      { "name": "sidebar-edge", "value": "3px 0 12px rgba(8,5,4,0.35)", "purpose": "Cast rightward onto the content area so the sidebar reads as a raised plane, not a seam." }
+    ]
+  },
+  "components": [
+    { "name": "Primary Button", "kind": "button", "refersTo": "button-primary", "description": "Coral fill with Accent-Ink text and the action-lift shadow; the single primary action per view. Hover lightens ~8% toward white; press drops the shadow." },
+    { "name": "Ghost Button", "kind": "button", "refersTo": "button-ghost", "description": "Translucent raised panel (35%) with a 1px resting border; the quiet secondary action. Hover warms the border to border-strong." },
+    { "name": "Icon Button", "kind": "button", "refersTo": "button-icon", "description": "Solid panel-raised fill, 1px border, 12px radius; optional count beside the glyph." },
+    { "name": "Plain Icon Button", "kind": "button", "refersTo": "button-plain", "description": "Transparent, borderless, faint hover tint only; for actions nested inside an already-styled row (e.g. per-task paperclip)." },
+    { "name": "Input Field", "kind": "input", "refersTo": "input", "description": "panel-raised background, 12px radius, 1px border; focus shifts the border to full Ember Coral, selection at 28% accent." },
+    { "name": "Dropdown (pick list)", "kind": "nav", "refersTo": "input", "description": "Matches the input; hover/open warm the border to border-strong, handle glyph in text-secondary." },
+    { "name": "Accent Chip", "kind": "chip", "refersTo": "chip-accent", "description": "panel-alt fill, 16px radius, Accent-Ink label; for attachment chips and small badges." },
+    { "name": "Neutral Chip", "kind": "chip", "refersTo": "chip-neutral", "description": "panel-raised fill, 14px radius, Text-Secondary label." },
+    { "name": "Modal Card", "kind": "card", "refersTo": "card-modal", "description": "panel-alt surface, 16px radius, border-strong edge, modal-lift shadow above a dimmed backdrop." },
+    { "name": "Mini Window", "kind": "custom", "refersTo": "card-panel", "description": "Signature hotkey-summoned capture popup: transparent window clipped to 10px radius with a 1.5px Ember-Coral hairline border at 45% alpha; no drop shadow (native CALayer clip)." },
+    { "name": "Editable Title", "kind": "custom", "refersTo": "card-panel", "description": "Signature 40px Poppins SemiBold list title that flips in place between display text and a borderless inline field; the capture-first way to rename a list." }
+  ],
+  "narrative": {
+    "northStar": "The Considered Desk",
+    "overview": "Taskscape is an uncluttered, deliberately arranged personal desk. Nothing extra sits on it; everything that is there is there on purpose and within easy reach. The surface is warm — terracotta, amber, toasted browns — so it feels lived-in and calm rather than clinical, but the warmth never tips into decoration. A single coral accent is the one tool you reach for most, and its rarity is what makes it read as 'the action.' Depth comes from tonal layering (bg → panel-alt → panel-raised), not from heavy shadows; shadows are rationed for surfaces that genuinely lift. The system rejects the corporate SaaS dashboard, sterile gray minimalism, visual clutter, and gamification. Calm confidence is the register; the design earns its keep by getting out of the way.",
+    "keyCharacteristics": [
+      "Warm, tonal, low-contrast surfaces; warmth carried by palette and type, never decoration.",
+      "One coral accent, used sparingly, as the single 'this is the action' signal.",
+      "Tonal layering over shadows; depth is rationed and meaningful.",
+      "Soft, friendly radii (10–16px); the square sidebar is the deliberate exception.",
+      "Full dark/light parity — both themes first-class, both legible (WCAG AA)."
+    ],
+    "rules": [
+      { "name": "The One Ember Rule", "body": "Ember Coral appears on a single primary affordance per view. If two things on screen are coral, one of them is wrong.", "section": "colors" },
+      { "name": "The Dual-Theme Parity Rule", "body": "Every color exists in both themes and both must ship at full quality. A change to a token is a change to both of its values.", "section": "colors" },
+      { "name": "The Warm-Shadow Rule", "body": "Shadows and borders are tinted toward the surface's own warm hue, never neutral gray or pure black.", "section": "colors" },
+      { "name": "The Two-Voice Rule", "body": "Poppins speaks for structure (titles, headings); Inter speaks for content and controls.", "section": "typography" },
+      { "name": "The Quiet-Type Rule", "body": "Size and weight carry hierarchy; tracking and case do not. No all-caps tracked eyebrows.", "section": "typography" },
+      { "name": "The Earned-Shadow Rule", "body": "A surface gets a shadow only if it physically lifts: the primary action, a modal, the sidebar edge. Everything else separates by tone.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do reserve Ember Coral for one primary action per view; build other hierarchy from the neutral ladder and type weight.",
+      "Do convey depth with tonal layering before reaching for a shadow.",
+      "Do keep both themes at full quality and verify contrast in each (4.5:1 body, 3:1 large).",
+      "Do route every style through common::thememanager factories and build UI from the t_* toolkit.",
+      "Do tint borders and shadows toward the surface's warm hue.",
+      "Do keep capture frictionless: hotkey → type → Enter and the mini window stay ceremony-free.",
+      "Do honor the system reduced-motion preference with a crossfade or instant fallback."
+    ],
+    "donts": [
+      "Don't build toward a corporate SaaS dashboard — no dense data-grid chrome, no enterprise blue.",
+      "Don't drift into sterile gray minimalism — no cold flat gray/white surfaces, no neutral-black shadows.",
+      "Don't clutter the surface — every control earns its place or is removed.",
+      "Don't gamify — no confetti, streaks, mascots, badges, or bright primary colors.",
+      "Don't let text-muted sit on a low-contrast surface for anything that must be read, placeholders included.",
+      "Don't add a second coral element, a decorative gradient wash, or a shadow 'to make it pop.'",
+      "Don't use all-caps tracked eyebrows or letter-spacing tricks for hierarchy."
+    ]
+  }
+}

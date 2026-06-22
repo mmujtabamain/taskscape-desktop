@@ -67,6 +67,18 @@ cargo check                              # fast type-check
 - macOS-only native code (objc2 AppKit/QuartzCore) lives in the tray crate and
   is `#[cfg(target_os = "macos")]`-gated with non-macOS stubs.
 
+## Design Context
+
+Strategic design intent lives in [PRODUCT.md](PRODUCT.md); the visual system is
+captured in [DESIGN.md](DESIGN.md). Read them before any UI work.
+
+- **Register:** `product` — design serves the workflow (fast capture, calm list).
+- **Users:** macOS power users; keyboard-first, menu-bar-resident, native feel.
+- **Principles:** (1) capture beats organize, (2) calm by subtraction, (3) warmth
+  without noise, (4) native craft, (5) legible in both themes (WCAG AA).
+- **Avoid:** corporate SaaS-dashboard density, sterile gray minimalism, clutter,
+  gamification.
+
 ## Known gotchas
 
 - The main app's entry point is `app::run()` at the bottom of
