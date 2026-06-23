@@ -68,8 +68,8 @@ pub fn t_attachment_chip<'a, M: Clone + 'static>(
 
     let style = Style {
         rest: Surface::new(p.raised, 0.0),
-        hover: Surface::new(mix(p.raised, p.text, 0.05), 0.0),
-        pressed: Surface::new(mix(p.raised, p.text, 0.08), 0.0),
+        hover: Surface::new(mix(p.raised, p.text, 0.08), -1.5),
+        pressed: Surface::new(mix(p.raised, p.text, 0.12), 0.5),
         radius: radius::SM,
         ring: None,
     };

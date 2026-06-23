@@ -15,7 +15,7 @@ ThemeMode (Dark | Light)                       ui/theme.rs   (serde, persisted i
    └─ color/with_alpha/mix/border/shadow         ui/theme.rs   (primitives)
 
 ui/tokens.rs   radius {sm 8, md 10, lg 12, xl 16} · space {xs..xxl} · text sizes · HAIRLINE_WIDTH
-ui/motion.rs   EASING (ease-out-quint) · QUICK/PRESS/BASE/SLOW · reduce_motion() gate · progress()
+ui/motion.rs   EASING (ease-out-cubic) · QUICK/PRESS/BASE/SLOW · reduce_motion() gate · progress()
 ```
 
 `Palette` holds the named colors: `bg / surface / raised` (the tonal ladder),

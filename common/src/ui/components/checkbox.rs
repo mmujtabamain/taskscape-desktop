@@ -29,8 +29,8 @@ pub fn t_checkbox<'a, M: Clone + 'a>(
     } else {
         Style {
             rest: Surface::new(with_alpha(p.text, 0.0), 0.0),
-            hover: Surface::new(with_alpha(p.text, 0.06), 0.0),
-            pressed: Surface::new(with_alpha(p.text, 0.10), 0.0),
+            hover: Surface::new(with_alpha(p.text, 0.11), 0.0),
+            pressed: Surface::new(with_alpha(p.text, 0.16), 0.0),
             radius: radius::SM,
             ring: Some((with_alpha(p.text, 0.28), 1.5)),
         }

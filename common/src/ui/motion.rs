@@ -1,6 +1,6 @@
 //! Motion presets for the redesign.
 //!
-//! All eased motion uses the ease-out-quint curve (no bounce/elastic). Per-widget
+//! All eased motion uses the ease-out-cubic curve (no bounce/elastic). Per-widget
 //! animations live in the widgets' own `tree::State` (see `components::interactive`)
 //! and drive their own redraws; app-state moments use a `window::frames()` tick.
 //! Every duration runs through [`gated`] so the Settings "Reduce motion" toggle can
@@ -25,17 +25,19 @@ pub fn reduce_motion() -> bool {
     REDUCE_MOTION.load(Ordering::Relaxed)
 }
 
-/// The one easing curve for the whole system.
-pub const EASING: Easing = Easing::EaseOutQuint;
+/// The one easing curve for the whole system. Ease-out-cubic spreads the motion
+/// across the duration so a transition reads as a *fade*, not a hard cut — quint
+/// front-loaded ~85% of the change into the first few frames, which looked instant.
+pub const EASING: Easing = Easing::EaseOutCubic;
 
 /// The snappiest feedback (press in/out).
-pub const PRESS: Duration = Duration::from_millis(90);
+pub const PRESS: Duration = Duration::from_millis(110);
 /// Hover / focus and most state changes.
-pub const QUICK: Duration = Duration::from_millis(120);
+pub const QUICK: Duration = Duration::from_millis(200);
 /// Default for most transitions (hover, reveal, open/close).
-pub const BASE: Duration = Duration::from_millis(180);
+pub const BASE: Duration = Duration::from_millis(260);
 /// Larger moments (theme cross-fade).
-pub const SLOW: Duration = Duration::from_millis(250);
+pub const SLOW: Duration = Duration::from_millis(320);
 
 /// Collapse a duration to instant when reduced motion is on.
 pub fn gated(duration: Duration, reduce_motion: bool) -> Duration {

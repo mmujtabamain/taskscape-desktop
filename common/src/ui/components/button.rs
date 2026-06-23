@@ -27,22 +27,22 @@ pub fn surface_style(mode: ThemeMode, kind: ButtonKind) -> Style {
     match kind {
         ButtonKind::Primary => Style {
             rest: Surface::new(p.accent, 0.0),
-            hover: Surface::new(p.accent_hover, -1.0),
-            pressed: Surface::new(mix(p.accent, p.on_accent, 0.14), 0.5),
+            hover: Surface::new(p.accent_hover, -2.0),
+            pressed: Surface::new(mix(p.accent, p.on_accent, 0.14), 1.0),
             radius: radius::MD,
             ring: None,
         },
         ButtonKind::Ghost | ButtonKind::Icon => Style {
             rest: Surface::new(with_alpha(p.text, 0.05), 0.0),
-            hover: Surface::new(with_alpha(p.text, 0.10), 0.0),
-            pressed: Surface::new(with_alpha(p.text, 0.14), 0.0),
+            hover: Surface::new(with_alpha(p.text, 0.12), -2.0),
+            pressed: Surface::new(with_alpha(p.text, 0.16), 1.0),
             radius: radius::MD,
             ring: None,
         },
         ButtonKind::Plain => Style {
             rest: Surface::new(with_alpha(p.text, 0.0), 0.0),
-            hover: Surface::new(with_alpha(p.text, 0.07), 0.0),
-            pressed: Surface::new(with_alpha(p.text, 0.12), 0.0),
+            hover: Surface::new(with_alpha(p.text, 0.09), -1.5),
+            pressed: Surface::new(with_alpha(p.text, 0.14), 1.0),
             radius: radius::MD,
             ring: None,
         },
