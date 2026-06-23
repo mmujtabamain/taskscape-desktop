@@ -105,6 +105,9 @@ impl TrayApp {
                 // the shell's 16px radius) so the corners aren't square. Must run
                 // on the UI thread; window::run guarantees that.
                 if self.mini_window_id == Some(window_id) {
+                    if let Some(t) = self.mini_open_started.take() {
+                        eprintln!("[mini] open request -> WindowOpened in {:?}", t.elapsed());
+                    }
                     // Round the corners, pin it over every Space (so it shows over
                     // full-screen apps, not just the desktop), pull it to the
                     // foreground and make it key — as a background (accessory) app
@@ -366,6 +369,7 @@ impl TrayApp {
         let (id, open) = window::open(settings);
         self.mini_window_id = Some(id);
         self.mini_focused = false;
+        self.mini_open_started = Some(std::time::Instant::now());
         self.status_message = String::from("Mini window opened.");
         // Deliberately no `gain_focus` here: it activates the app, and doing that
         // *before* `WindowOpened` marks the window `canJoinAllSpaces` makes macOS

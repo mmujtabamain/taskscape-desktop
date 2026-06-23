@@ -39,6 +39,15 @@ Living progress tracker for the redesign. Plan: [agent.plan.md](agent.plan.md).
 - [x] `.index/{theming,where-to-fix,common,main,tray,README,architecture,glossary}.md`
 - [x] `CLAUDE.md` + `common/Cargo.toml` comment
 
+## Frost fix (post-build)
+- [x] **No-frost bug:** iced cleared the surface with the *opaque* theme background
+  (`theme::Style.background_color` default) → solid dark over the vibrancy. Fixed by
+  adding `.style()` to both daemons returning `background_color: Color::TRANSPARENT`
+  (mini + main). View-hierarchy frost technique (`frost_window`/`chrome::apply`) was
+  already correct; the opaque clear was masking it.
+- Debug `eprintln!("[frost]"/"[chrome]"…)` left in `tray.rs`/`chrome.rs` for this
+  round — remove once the blur is confirmed.
+
 ## DONE — full `cargo build` clean. Hand off to user for visual verification.
 
 ## Notes / follow-ups

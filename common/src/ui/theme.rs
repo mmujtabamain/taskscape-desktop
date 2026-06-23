@@ -129,8 +129,8 @@ pub fn palette(mode: ThemeMode) -> Palette {
             danger: color(0xD6, 0x7D, 0x67),
             warning: color(0xD9, 0xA4, 0x45),
             scrim: with_alpha(color(0x00, 0x00, 0x00), 0.55),
-            glass_tint: with_alpha(color(0x18, 0x1A, 0x1D), 0.50),
-            glass_edge: with_alpha(color(0xFF, 0xFF, 0xFF), 0.12),
+            glass_tint: with_alpha(color(0x18, 0x1A, 0x1D), 0.),
+            glass_edge: with_alpha(color(0xFF, 0xFF, 0xFF), 0.),
         },
         ThemeMode::Light => Palette {
             bg: color(0xF2, 0xF3, 0xF4),

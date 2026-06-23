@@ -127,6 +127,9 @@ pub struct TrayApp {
     /// Set when the user asked to show the main app but it was not linked: we
     /// launch it and send `ShowMain` once it connects.
     pub(crate) pending_show_main: bool,
+    /// When the mini window was last requested to open (hotkey/tray click), to
+    /// measure open latency in logs.
+    pub(crate) mini_open_started: Option<std::time::Instant>,
 }
 
 impl Default for TrayApp {
@@ -148,6 +151,7 @@ impl Default for TrayApp {
             ipc_connected: false,
             applying_remote: false,
             pending_show_main: false,
+            mini_open_started: None,
         }
     }
 }
@@ -277,6 +281,13 @@ pub fn run() -> iced::Result {
         .font(fonts::RALEWAY_BOLD_BYTES)
         .font(fonts::ICON_FONT_BYTES)
         .default_font(fonts::montserrat_regular())
+        // Clear the surface TRANSPARENT (not the opaque theme background) so the
+        // native frosted-glass backdrop behind the transparent window shows through;
+        // the shell's `glass_tint` is the only fill on top.
+        .style(|_state, theme: &Theme| iced::theme::Style {
+            background_color: iced::Color::TRANSPARENT,
+            text_color: theme.palette().text,
+        })
         .settings(Settings::default())
         .antialiasing(true)
         .run()

@@ -314,6 +314,12 @@ pub fn run() -> iced::Result {
         .font(fonts::RALEWAY_BOLD_BYTES)
         .font(fonts::ICON_FONT_BYTES)
         .default_font(fonts::montserrat_regular())
+        // Clear the surface TRANSPARENT so the frosted backdrop (chrome::apply)
+        // shows through; `frosted_shell` is the only fill on top.
+        .style(|_state, theme: &Theme| iced::theme::Style {
+            background_color: iced::Color::TRANSPARENT,
+            text_color: theme.palette().text,
+        })
         .settings(Settings::default())
         .antialiasing(true)
         .run()

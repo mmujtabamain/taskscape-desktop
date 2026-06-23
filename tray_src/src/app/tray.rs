@@ -199,15 +199,43 @@ pub fn frost_window(handle: &dyn iced::window::raw_window_handle::HasWindowHandl
     // SAFETY: on the UI thread (window::run guarantees it); the view pointer is
     // valid for the call. The effect view is owned by the frame view once added.
     unsafe {
+        let started = std::time::Instant::now();
         let content: &NSView = appkit.ns_view.cast().as_ref();
         let Some(frame_view) = content.superview() else {
+            eprintln!("[frost] content view has no superview (window frame)");
             return;
         };
 
-        let effect = NSVisualEffectView::initWithFrame(
-            mtm.alloc::<NSVisualEffectView>(),
-            frame_view.bounds(),
-        );
+        // Mark the Iced content layer non-opaque, otherwise Core Animation
+        // composites it as solid and the blur behind never shows through the tint.
+        content.setWantsLayer(true);
+        match content.layer() {
+            Some(layer) => {
+                eprintln!(
+                    "[frost] content layer isOpaque before = {}, sublayers = {}",
+                    layer.isOpaque(),
+                    layer.sublayers().map(|s| s.count()).unwrap_or(0),
+                );
+                layer.setOpaque(false);
+                // wgpu's CAMetalLayer is a *sublayer* and is opaque by default, so
+                // Core Animation composites it solid (black) regardless of the
+                // surface's PostMultiplied alpha. Make every sublayer non-opaque so
+                // the vibrancy behind actually shows through.
+                if let Some(subs) = layer.sublayers() {
+                    for i in 0..subs.count() {
+                        let sub = subs.objectAtIndex(i);
+                        eprintln!("[frost]   sublayer {i} isOpaque before = {}", sub.isOpaque());
+                        sub.setOpaque(false);
+                    }
+                }
+            }
+            None => eprintln!("[frost] content view has NO layer"),
+        }
+
+        let fb = frame_view.bounds();
+        eprintln!("[frost] frame = {:.0}x{:.0}", fb.size.width, fb.size.height);
+
+        let effect = NSVisualEffectView::initWithFrame(mtm.alloc::<NSVisualEffectView>(), fb);
         effect.setMaterial(NSVisualEffectMaterial::HUDWindow);
         effect.setBlendingMode(NSVisualEffectBlendingMode::BehindWindow);
         effect.setState(NSVisualEffectState::Active);
@@ -224,6 +252,7 @@ pub fn frost_window(handle: &dyn iced::window::raw_window_handle::HasWindowHandl
         }
 
         frame_view.addSubview_positioned_relativeTo(&effect, NSWindowOrderingMode::Below, None);
+        eprintln!("[frost] frosted backdrop installed in {:?}", started.elapsed());
     }
 }
 
