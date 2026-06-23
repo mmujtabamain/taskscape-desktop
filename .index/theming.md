@@ -20,8 +20,8 @@ ui/motion.rs   EASING (ease-out-quint) · QUICK/PRESS/BASE/SLOW · reduce_motion
 
 `Palette` holds the named colors: `bg / surface / raised` (the tonal ladder),
 `text / text_dim / text_muted`, `accent / accent_hover / on_accent / ring`,
-`hairline`, `success / danger / warning`, `scrim`, and `glass_tint / glass_edge`
-(mini window). Both themes are gray with a bronze accent.
+`hairline`, `success / danger / warning`, and `scrim`. Both themes are gray with a
+bronze accent.
 
 ## Component toolkit — `ui/components/`
 
@@ -42,7 +42,7 @@ Composable Iced builders that already apply theme + fonts + motion. Re-exported 
 | `t_editable_title` (`TITLE_INPUT_ID`)  | editable_title.rs | Inline-editable 32px Raleway title                 |
 | `t_metric`                             | metric.rs         | Flat value+label readout (not a card)              |
 | `icon` + `Icon`                        | icon.rs           | A Material Symbols Sharp glyph                      |
-| `shell`/`glass_shell`/`frosted_shell`/`surface`/`raised`/`bar`/`divider`/`sidebar`/`modal_backdrop`/`modal_card` | containers.rs | Container styles (`frosted_shell` = full-bleed glass tint for the frosted main window) |
+| `shell`/`mini_shell`/`surface`/`raised`/`bar`/`divider`/`sidebar`/`modal_backdrop`/`modal_card` | containers.rs | Container styles (`shell` = full-bleed solid main window; `mini_shell` = rounded solid mini/popover) |
 
 ### Adding/altering a look
 - New color → add to `Palette` + set both modes in `palette()` (theme.rs).
@@ -68,17 +68,17 @@ Embedded TTF bytes + `Font` builders in [../common/src/utils/fonts.rs](../common
 a variant in `ui/components/icon.rs`. Sources under
 [../assets/fonts/](../assets/fonts/) (Montserrat, Raleway, MaterialSymbols).
 
-## Native frosted glass (both windows)
+## Window chrome (both windows)
 
-Both windows are transparent windows with a native `NSVisualEffectView` (system
-blur) inserted **behind** the Iced content (the blur renders before the content,
-never on top):
+Both windows are solid matte (no blur/vibrancy):
 
-- **Mini window** — `tray::frost_window` in
-  [../tray_src/src/app/tray.rs](../tray_src/src/app/tray.rs); borderless HUD, corners
-  clipped via CALayer (`round_window`). `glass_shell` lays a faint tint + 1px edge on top.
-- **Main window** — `chrome::apply` in
-  [../main_src/src/app/chrome.rs](../main_src/src/app/chrome.rs); also makes the system
-  title bar transparent + full-size content view (native traffic lights kept, custom
-  title bar drawn in [../main_src/src/app/ui/titlebar.rs](../main_src/src/app/ui/titlebar.rs)).
-  `frosted_shell` lays the full-bleed tint on top; native frame supplies the rounded corners + shadow.
+- **Mini window** — a borderless, transparent HUD with corners clipped via CALayer
+  (`tray::round_window` in [../tray_src/src/app/tray.rs](../tray_src/src/app/tray.rs)).
+  The window stays transparent only so the clipped corners read as transparent;
+  `mini_shell` paints the opaque rounded fill on top.
+- **Main window** — opaque; `chrome::apply` in
+  [../main_src/src/app/chrome.rs](../main_src/src/app/chrome.rs) makes the system title
+  bar transparent + full-size content view (native traffic lights kept, custom title bar
+  drawn in [../main_src/src/app/ui/titlebar.rs](../main_src/src/app/ui/titlebar.rs)).
+  `shell` lays the full-bleed solid fill on top; native frame supplies the rounded
+  corners + shadow.

@@ -33,12 +33,12 @@ then the service runs windowless until the mini window is opened.
 | File                                           | Purpose                                                                                                                       |
 | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | [src/app/ui/mod.rs](../tray_src/src/app/ui/mod.rs)             | Module aggregator; re-exports `MINI_INPUT_ID`, `MINI_RADIUS`                                            |
-| [src/app/ui/mini.rs](../tray_src/src/app/ui/mini.rs)           | Frosted-glass mini window: `mini_view` (drag-handle header + composer + scrollable task list + footer), `mini_task_row` |
+| [src/app/ui/mini.rs](../tray_src/src/app/ui/mini.rs)           | Compact mini window: `mini_view` (drag-handle header + composer + scrollable task list + footer), `mini_task_row` |
 | [src/app/ui/quit_confirm.rs](../tray_src/src/app/ui/quit_confirm.rs) | `quit_confirm_view` (draggable borderless popover, its own window)                               |
 
-The mini window's Spotlight-style blur is native: `tray::frost_window` inserts an
-`NSVisualEffectView` behind the transparent Iced content; `common::ui::glass_shell`
-lays the tint + edge on top.
+The mini window is a solid matte HUD: the window is transparent only so its corners
+(clipped via `tray::round_window`) read as transparent; `common::ui::mini_shell`
+paints the opaque rounded fill on top.
 
 ## Other
 

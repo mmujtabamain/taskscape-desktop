@@ -66,8 +66,8 @@ relative to the repo root. Deeper file detail: [common.md](common.md),
 | Motion (durations, easing, reduce-motion)                    | [common/src/ui/motion.rs](../common/src/ui/motion.rs)                                                      |
 | Hover/press/focus animation (any control)                    | [common/src/ui/components/interactive.rs](../common/src/ui/components/interactive.rs) (the custom `Widget`)|
 | A specific element's style/markup (button/input/chip/…)      | the matching `common/src/ui/components/*.rs` — see [theming.md](theming.md)                                |
-| Frosted-glass mini window (native blur)                      | [tray_src/src/app/tray.rs](../tray_src/src/app/tray.rs) (`frost_window`) + `glass_shell` (containers.rs)   |
-| Main window's custom title bar + frosted backdrop            | [main_src/src/app/chrome.rs](../main_src/src/app/chrome.rs) (`apply`) + [main_src/src/app/ui/titlebar.rs](../main_src/src/app/ui/titlebar.rs) + `frosted_shell` (containers.rs) |
+| Mini window rounded corners + solid fill                     | [tray_src/src/app/tray.rs](../tray_src/src/app/tray.rs) (`round_window`) + `mini_shell` (containers.rs)   |
+| Main window's custom title bar                                | [main_src/src/app/chrome.rs](../main_src/src/app/chrome.rs) (`apply`) + [main_src/src/app/ui/titlebar.rs](../main_src/src/app/ui/titlebar.rs) + `shell` (containers.rs) |
 | Reduce motion (setting + persistence)                        | [main_src/src/app/ui/settings.rs](../main_src/src/app/ui/settings.rs); `config.reduce_motion`; `motion::set_reduce_motion` |
 | Fonts / icons                                                | [common/src/utils/fonts.rs](../common/src/utils/fonts.rs) + [assets/fonts/](../assets/fonts/); add icons via `used-icons.txt` + `regen-subset.sh` |
 

@@ -15,14 +15,7 @@ muda = "0.19"
 rfd = "0.15"
 
 [target.'cfg(target_os = "macos")'.dependencies]
-# Custom title bar + frosted-glass backdrop for the main window.
-# `NSWindow`/`NSView` (+ `NSResponder`, which `NSWindow` extends): a transparent
-# system title bar with a full-size content view (we draw our own bar over the
-# native traffic lights) and a non-opaque window so the blur can show through.
-# `NSColor`: a clear window background. `NSVisualEffectView` (+ `NSGraphics` for
-# `NSWindowOrderingMode`): the native blur, added behind the Iced content view as
-# a sibling in the window frame.
-objc2-app-kit = { version = "0.3", features = ["NSView", "NSWindow", "NSResponder", "NSColor", "NSVisualEffectView", "NSGraphics"] }
-objc2-foundation = "0.3"
-# CALayer: mark the Iced content layer non-opaque so the blur behind shows through.
-objc2-quartz-core = { version = "0.3", features = ["CALayer", "objc2-core-foundation"] }
+# Custom title bar for the main window. `NSWindow`/`NSView` (+ `NSResponder`,
+# which `NSWindow` extends): a transparent system title bar with a full-size
+# content view, so we draw our own bar over the native traffic lights.
+objc2-app-kit = { version = "0.3", features = ["NSView", "NSWindow", "NSResponder"] }

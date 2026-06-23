@@ -2,7 +2,7 @@
 
 use crate::app::{AppElement, Message, TrayApp};
 use common::ui::tokens::{space, text};
-use common::ui::{ButtonKind, Icon, glass_shell, palette, t_button, t_caption, t_heading};
+use common::ui::{ButtonKind, Icon, mini_shell, palette, t_button, t_caption, t_heading};
 use iced::widget::{Space, column, container, mouse_area, row};
 use iced::{Alignment, Length};
 
@@ -38,7 +38,7 @@ impl TrayApp {
             .width(Length::Fill)
             .height(Length::Fill)
             .padding(space::XL)
-            .style(glass_shell(self.theme_mode));
+            .style(mini_shell(self.theme_mode));
 
         mouse_area(panel).on_press(Message::DragConfirm).into()
     }

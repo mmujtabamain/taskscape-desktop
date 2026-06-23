@@ -115,7 +115,6 @@ impl TrayApp {
                     // keyboard input — then put the cursor in the task input.
                     let prepare = window::run(window_id, |window| {
                         crate::app::tray::round_window(window, crate::app::ui::MINI_RADIUS as f64);
-                        crate::app::tray::frost_window(window, crate::app::ui::MINI_RADIUS as f64);
                         crate::app::tray::pin_over_spaces(window);
                         crate::app::tray::focus_window(window);
                     })
@@ -127,7 +126,6 @@ impl TrayApp {
                 if self.confirm_window_id == Some(window_id) {
                     return window::run(window_id, |window| {
                         crate::app::tray::round_window(window, crate::app::ui::MINI_RADIUS as f64);
-                        crate::app::tray::frost_window(window, crate::app::ui::MINI_RADIUS as f64);
                         crate::app::tray::pin_over_spaces(window);
                     })
                     .discard();

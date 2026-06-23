@@ -2,8 +2,8 @@
 //!
 //! The native system title bar is made transparent (see `app::chrome`), leaving
 //! only the traffic-light buttons; this slim, draggable bar takes its place. It
-//! sits over the frosted-glass backdrop, carries a quiet centered wordmark, and
-//! reserves a gutter on the left so it never overlaps the traffic lights.
+//! carries a quiet centered wordmark and reserves a gutter on the left so it
+//! never overlaps the traffic lights.
 
 use crate::app::{AppElement, Message, Taskscape};
 use common::ui::tokens::text;

@@ -1,8 +1,8 @@
 //! Container style factories for the redesign.
 //!
 //! Fill-over-outline: filled surfaces carry **no border** — separation is by tone.
-//! The mini window is the one glass surface (transparent fill + a defining edge,
-//! since it has no opaque fill). The main window is solid matte.
+//! Both windows are solid matte: the main window is full-bleed (`shell`), the mini
+//! window/popover a rounded opaque panel (`mini_shell`).
 
 use crate::ui::theme::{Palette, ThemeMode, border, palette, shadow};
 use crate::ui::tokens::{HAIRLINE_WIDTH, radius};
@@ -21,25 +21,15 @@ pub fn shell(mode: ThemeMode) -> impl Fn(&Theme) -> container::Style + Clone {
     }
 }
 
-/// The frosted mini-window shell: a faint tint + defining edge laid over the native
-/// vibrancy. The window itself is opened transparent so the blur shows through.
-pub fn glass_shell(mode: ThemeMode) -> impl Fn(&Theme) -> container::Style + Clone {
+/// The mini-window / popover shell: a solid opaque fill with rounded corners (no
+/// border, fill-over-outline). The window is opened transparent so the corners
+/// outside this rounded fill read as transparent (clipped via `round_window`).
+pub fn mini_shell(mode: ThemeMode) -> impl Fn(&Theme) -> container::Style + Clone {
     move |_t: &Theme| {
         let p = palette(mode);
         base(&p)
-            .background(p.glass_tint)
-            .border(border(radius::XL, 1.0, p.glass_edge))
-    }
-}
-
-/// The frosted **main-window** shell: just the faint glass tint, full-bleed with
-/// no border or radius (the native window frame supplies the edge + rounded
-/// corners). Laid over the native vibrancy backdrop (`chrome::apply`) so the
-/// desktop shows through, blurred.
-pub fn frosted_shell(mode: ThemeMode) -> impl Fn(&Theme) -> container::Style + Clone {
-    move |_t: &Theme| {
-        let p = palette(mode);
-        base(&p).background(p.glass_tint)
+            .background(p.bg)
+            .border(border(radius::XL, 0.0, p.bg))
     }
 }
 

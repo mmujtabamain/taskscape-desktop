@@ -2,8 +2,7 @@
 //!
 //! A calm gray field with a single warm bronze signal, in two themes. Surfaces
 //! separate by **fill / tonal step**, not outlines — `hairline` exists only for
-//! places without a fill (or as a `ring` state). Glass-specific tokens drive the
-//! frosted mini window (a tint + edge over the native vibrancy).
+//! places without a fill (or as a `ring` state).
 
 use iced::{Border, Color, Shadow, Theme, Vector, theme};
 use serde::{Deserialize, Serialize};
@@ -70,10 +69,6 @@ pub struct Palette {
     pub warning: Color,
     /// Dim backdrop behind a modal.
     pub scrim: Color,
-    /// Faint fill laid over the native vibrancy in the glass mini window.
-    pub glass_tint: Color,
-    /// Subtle edge that defines the glass panel against the desktop.
-    pub glass_edge: Color,
 }
 
 pub fn color(r: u8, g: u8, b: u8) -> Color {
@@ -129,8 +124,6 @@ pub fn palette(mode: ThemeMode) -> Palette {
             danger: color(0xD6, 0x7D, 0x67),
             warning: color(0xD9, 0xA4, 0x45),
             scrim: with_alpha(color(0x00, 0x00, 0x00), 0.55),
-            glass_tint: with_alpha(color(0x18, 0x1A, 0x1D), 0.),
-            glass_edge: with_alpha(color(0xFF, 0xFF, 0xFF), 0.),
         },
         ThemeMode::Light => Palette {
             bg: color(0xF2, 0xF3, 0xF4),
@@ -148,8 +141,6 @@ pub fn palette(mode: ThemeMode) -> Palette {
             danger: color(0xB8, 0x54, 0x3F),
             warning: color(0x8A, 0x60, 0x12),
             scrim: with_alpha(color(0x1A, 0x1C, 0x20), 0.35),
-            glass_tint: with_alpha(color(0xFF, 0xFF, 0xFF), 0.55),
-            glass_edge: with_alpha(color(0x1A, 0x1C, 0x20), 0.12),
         },
     }
 }

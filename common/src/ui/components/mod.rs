@@ -18,8 +18,7 @@ pub mod typography;
 pub use button::{ButtonKind, surface_style, t_button};
 pub use checkbox::t_checkbox;
 pub use containers::{
-    bar, divider, frosted_shell, glass_shell, modal_backdrop, modal_card, raised, shell, sidebar,
-    surface,
+    bar, divider, mini_shell, modal_backdrop, modal_card, raised, shell, sidebar, surface,
 };
 pub use chip::{t_attachment_chip, t_small_chip};
 pub use dropdown::{pick_list_style, t_dropdown};

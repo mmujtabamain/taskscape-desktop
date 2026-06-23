@@ -1,15 +1,15 @@
 //! The compact "mini" window shown from the menu-bar icon.
 //!
-//! A frosted-glass HUD (Spotlight-like): the window is transparent, a native
-//! vibrancy view sits behind the Iced content (see `tray::frost_window`), and the
-//! `glass_shell` paints a faint tint + defining edge on top. Dense by design — a
-//! slim draggable header, a one-line composer, the task list, and a thin footer.
+//! A compact floating HUD (Spotlight-like): the window is transparent with rounded
+//! corners (clipped via `tray::round_window`), and `mini_shell` paints the solid
+//! opaque fill on top. Dense by design — a slim draggable header, a one-line
+//! composer, the task list, and a thin footer.
 
 use crate::app::{AppElement, AttachTarget, Message, TrayApp};
 use common::models::Task;
 use common::ui::tokens::{radius, space, text};
 use common::ui::{
-    ButtonKind, Icon, Interactive, Surface, SurfaceStyle, glass_shell, icon, palette, surface,
+    ButtonKind, Icon, Interactive, Surface, SurfaceStyle, icon, mini_shell, palette, surface,
     surface_style, t_attachment_chip, t_body, t_caption, t_checkbox, t_icon_button,
     t_icon_button_ghost, text_input_style, with_alpha,
 };
@@ -39,7 +39,7 @@ impl TrayApp {
             .width(Length::Fill)
             .height(Length::Fill)
             .padding(space::MD)
-            .style(glass_shell(self.theme_mode))
+            .style(mini_shell(self.theme_mode))
             .into()
     }
 

@@ -9,7 +9,7 @@ pub(crate) use lists::RENAME_INPUT_ID;
 
 use crate::app::{AppElement, Taskscape};
 use common::ui::tokens::{space, text};
-use common::ui::{bar, frosted_shell, palette, t_body, t_caption, t_metric};
+use common::ui::{bar, palette, shell, t_body, t_caption, t_metric};
 use iced::widget::{Space, column, container, row, stack};
 use iced::{Alignment, Length};
 
@@ -26,20 +26,19 @@ impl Taskscape {
             .height(Length::Fill);
 
         // The custom title bar spans the full width above the sidebar + content;
-        // the whole window is the one frosted-glass surface (`frosted_shell` over
-        // the native vibrancy backdrop installed in `chrome::apply`).
+        // the whole window is one solid `shell` surface.
         let root = column![self.title_bar(), body]
             .width(Length::Fill)
             .height(Length::Fill);
 
-        let shell = container(root)
+        let window_shell = container(root)
             .width(Length::Fill)
             .height(Length::Fill)
-            .style(frosted_shell(self.theme_mode));
+            .style(shell(self.theme_mode));
 
         match self.rename_modal().or_else(|| self.clear_all_modal()) {
-            Some(modal) => stack![shell, modal].into(),
-            None => shell.into(),
+            Some(modal) => stack![window_shell, modal].into(),
+            None => window_shell.into(),
         }
     }
 

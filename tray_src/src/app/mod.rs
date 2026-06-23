@@ -282,8 +282,8 @@ pub fn run() -> iced::Result {
         .font(fonts::ICON_FONT_BYTES)
         .default_font(fonts::montserrat_regular())
         // Clear the surface TRANSPARENT (not the opaque theme background) so the
-        // native frosted-glass backdrop behind the transparent window shows through;
-        // the shell's `glass_tint` is the only fill on top.
+        // rounded corners (clipped via `round_window`) read as transparent at the
+        // edges; `mini_shell` paints the opaque fill on top.
         .style(|_state, theme: &Theme| iced::theme::Style {
             background_color: iced::Color::TRANSPARENT,
             text_color: theme.palette().text,

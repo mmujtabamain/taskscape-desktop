@@ -189,9 +189,8 @@ impl Taskscape {
             }
             Message::WindowOpened(window_id) => {
                 self.window_id = Some(window_id);
-                // Both run on the UI thread (window::run guarantees it): style the
-                // window chrome (transparent title bar + frosted backdrop) and
-                // install the native menu.
+                // Both run on the UI thread (window::run guarantees it): apply the
+                // custom title bar and install the native menu.
                 let chrome = window::run(window_id, |window| {
                     crate::app::chrome::apply(window);
                 })

@@ -20,12 +20,10 @@ rfd = "0.15"
 # the mini window under the menu-bar icon and to flip the mouse location).
 # `NSView`/`NSWindow`: disable the mini window's drop shadow so its transparent
 # rounded corners don't sit inside a square shadow outline, and make it key.
-# `NSApplication`: activate the (accessory) app so the mini window can take focus.
-# `NSEvent`: read the global mouse location to summon the window at the cursor.
-# `NSVisualEffectView` (+ `NSGraphics` for `NSWindowOrderingMode`): the Spotlight-
-# style frosted-glass blur, added behind the Iced content view as a sibling in the
-# window frame so it sits behind the transparent mini window.
-objc2-app-kit = { version = "0.3", features = ["NSScreen", "NSView", "NSWindow", "NSResponder", "NSColor", "NSApplication", "NSEvent", "NSVisualEffectView", "NSGraphics"] }
+# `NSColor`: a clear window background. `NSApplication`: activate the (accessory)
+# app so the mini window can take focus. `NSEvent`: read the global mouse location
+# to summon the window at the cursor.
+objc2-app-kit = { version = "0.3", features = ["NSScreen", "NSView", "NSWindow", "NSResponder", "NSColor", "NSApplication", "NSEvent"] }
 objc2-foundation = "0.3"
 # CALayer (cornerRadius + masksToBounds) to clip the window's GPU surface to a
 # rounded rect, so the transparent corners don't show square edges.
